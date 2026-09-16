@@ -289,6 +289,9 @@ namespace XDM.Core.BrowserMonitoring
                 writer.WritePropertyName("enabled");
                 writer.WriteValue(Config.Instance.IsBrowserMonitoringEnabled);
 
+                writer.WritePropertyName("captureAll");
+                writer.WriteValue(Config.Instance.CaptureAllBrowserDownloads);
+
                 writer.WritePropertyName("fileExts");
                 writer.WriteStartArray();
                 foreach (var ext in Config.Instance.FileExtensions)

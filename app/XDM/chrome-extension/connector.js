@@ -22,9 +22,20 @@ export default class Connector {
     }
 
     onTimer() {
-        fetch(APP_BASE_URL + "/sync")
+        this.sync();
+    }
+
+    /**
+     * Asks XDM for its current configuration. Resolves once the answer has been applied
+     * (or the connection marked as lost), so callers can decide with fresh state.
+     */
+    sync(timeoutMs = 2000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        return fetch(APP_BASE_URL + "/sync", { signal: controller.signal })
             .then(this.onResponse.bind(this))
-            .catch(err => this.disconnect());
+            .catch(err => this.disconnect())
+            .finally(() => clearTimeout(timer));
     }
 
     disconnect() {
@@ -38,7 +49,7 @@ export default class Connector {
 
     onResponse(res) {
         this.connected = true;
-        res.json().then(json => this.onMessage(json)).catch(err => this.disconnect());
+        return res.json().then(json => this.onMessage(json)).catch(err => this.disconnect());
     }
 
     postMessage(url, data) {

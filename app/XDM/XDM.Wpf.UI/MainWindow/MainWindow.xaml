@@ -207,6 +207,7 @@
             <MenuItem Name="menuNewDownload" Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuVideoDownload" Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuBatchDownload" Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuFileHostDownload" Foreground="{StaticResource ControlForecolor}"/>
         </ContextMenu>
     </Window.Resources>
     <Border BorderBrush="{StaticResource ToolbarBordercolor}" 

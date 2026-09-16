@@ -122,6 +122,12 @@ namespace XDM.GtkUI
             uvc.Run();
         }
 
+        public void ShowFileHostDownloadWindow(string? links = null)
+        {
+            // The GoFile / Bunkr dialog only exists in the WPF front end so far.
+            ShowMessageBox(GetMainWindow(), TextResource.GetText("FH_NOT_AVAILABLE"));
+        }
+
         public void ShowSettingsDialog(int page = 0)
         {
             using var win = SettingsDialog.CreateFromGladeFile(GetMainWindow(), GetWindowGroup());

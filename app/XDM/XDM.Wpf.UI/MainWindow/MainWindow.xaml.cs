@@ -657,6 +657,10 @@ namespace XDM.Wpf.UI
             var menuBatchDownload = (MenuItem)newDownloadMenu.Items[2];
             menuBatchDownload.Click += MenuBatchDownload_Click;
             menuBatchDownload.Header = TextResource.GetText("MENU_BATCH_DOWNLOAD");
+
+            var menuFileHostDownload = (MenuItem)newDownloadMenu.Items[3];
+            menuFileHostDownload.Click += MenuFileHostDownload_Click;
+            menuFileHostDownload.Header = TextResource.GetText("MENU_FILEHOST_DOWNLOAD");
         }
 
         private void BtnHelp_Click(object sender, RoutedEventArgs e)
@@ -705,6 +709,11 @@ namespace XDM.Wpf.UI
         private void MenuBatchDownload_Click(object sender, RoutedEventArgs e)
         {
             this.BatchDownloadClicked?.Invoke(sender, e);
+        }
+
+        private void MenuFileHostDownload_Click(object sender, RoutedEventArgs e)
+        {
+            ApplicationContext.PlatformUIService.ShowFileHostDownloadWindow();
         }
 
         private void LvFinishedContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)

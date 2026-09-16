@@ -143,6 +143,27 @@ namespace XDM.Core
 
         public bool DoubleClickOpenFile { get; set; } = false;
 
+        /// <summary>
+        /// Browser extension takes over every download (like IDM) instead of only the
+        /// extensions listed in <see cref="FileExtensions"/>.
+        /// </summary>
+        public bool CaptureAllBrowserDownloads { get; set; } = true;
+
+        public bool FileHostCreateSubfolders { get; set; } = true;
+
+        public string GofileAccountToken { get; set; }
+
+        /// <summary>
+        /// Overrides the built-in X-Website-Token salt when GoFile rotates it. Empty means default.
+        /// </summary>
+        public string GofileWebsiteTokenSalt { get; set; }
+
+        public string BunkrIncludeFilter { get; set; }
+
+        public string BunkrIgnoreFilter { get; set; }
+
+        public bool BunkrCleanName { get; set; }
+
         public bool RunOnLogon
         {
             get => PlatformHelper.IsAutoStartEnabled();

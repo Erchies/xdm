@@ -20,6 +20,7 @@ using XDM.Core.Downloader.Adaptive.Dash;
 using XDM.Core.Downloader.Progressive;
 using XDM.Core.DataAccess;
 using XDM.Core.IO;
+using XDM.Core.FileHosts;
 
 #if !NET5_0_OR_GREATER
 using XDM.Compatibility;
@@ -419,6 +420,7 @@ namespace XDM.Core
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
                 RemoveStateFiles(http.Id, false);
+                FileHostFileDates.Apply(Config.DataDir, http.Id, http.TargetFile);
                 ApplicationContext.Application.DownloadFinished(http.Id, http.FileSize < 0 ? new FileInfo(http.TargetFile).Length : http.FileSize, http.TargetFile);
 
                 var showCompleteDialog = false;
@@ -694,6 +696,7 @@ namespace XDM.Core
             if (deleteInfo)
             {
                 files.Add(Path.Combine(Config.DataDir, id + ".info"));
+                files.Add(FileHostFileDates.PathFor(Config.DataDir, id));
             }
             files.Add(Path.Combine(Config.DataDir, id + ".state"));
             files.Add(Path.Combine(Config.DataDir, id + ".state.1"));

@@ -32,6 +32,11 @@ namespace XDM.Core
 
         void ShowBatchDownloadWindow();
 
+        /// <summary>
+        /// Dialog that lists GoFile folders and Bunkr albums and queues their files.
+        /// </summary>
+        void ShowFileHostDownloadWindow(string? links = null);
+
         void ShowSettingsDialog(int page = 0);
 
         void ShowBrowserMonitoringDialog();

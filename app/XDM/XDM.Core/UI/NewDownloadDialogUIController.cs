@@ -5,6 +5,7 @@ using Translations;
 using XDM.Core;
 using XDM.Core.Downloader;
 using XDM.Core.Downloader.Progressive.SingleHttp;
+using XDM.Core.FileHosts;
 using XDM.Core.Util;
 
 namespace XDM.Core.UI
@@ -153,6 +154,15 @@ namespace XDM.Core.UI
             if (!Helpers.IsUriValid(window.Url))
             {
                 window.ShowMessageBox(TextResource.GetText("MSG_INVALID_URL"));
+                return;
+            }
+            if (FileHostResolvers.IsSupported(window.Url))
+            {
+                // GoFile folders and Bunkr albums are HTML pages: list their files instead of
+                // downloading the page itself.
+                var url = window.Url;
+                window.DisposeWindow();
+                ApplicationContext.PlatformUIService.ShowFileHostDownloadWindow(url);
                 return;
             }
             if (string.IsNullOrEmpty(window.SelectedFileName))

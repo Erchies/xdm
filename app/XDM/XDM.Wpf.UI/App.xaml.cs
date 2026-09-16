@@ -73,6 +73,8 @@ namespace XDM.Wpf.UI
                 .RegisterPlatformUIService(new WpfPlatformUIService())
                 .Configure();
 
+            MsixHelper.UpdateInstalledExtensionIfChanged();
+
             ArgsProcessor.Process(Environment.GetCommandLineArgs().Skip(1));
 
             AppTrayIcon.AttachToSystemTray();

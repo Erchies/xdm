@@ -190,6 +190,27 @@ namespace XDM.Core.IO
                     case "MonitorClipboard":
                         instance.MonitorClipboard = r.ReadBoolean();
                         break;
+                    case "CaptureAllBrowserDownloads":
+                        instance.CaptureAllBrowserDownloads = r.ReadBoolean();
+                        break;
+                    case "FileHostCreateSubfolders":
+                        instance.FileHostCreateSubfolders = r.ReadBoolean();
+                        break;
+                    case "GofileAccountToken":
+                        instance.GofileAccountToken = r.ReadString();
+                        break;
+                    case "GofileWebsiteTokenSalt":
+                        instance.GofileWebsiteTokenSalt = r.ReadString();
+                        break;
+                    case "BunkrIncludeFilter":
+                        instance.BunkrIncludeFilter = r.ReadString();
+                        break;
+                    case "BunkrIgnoreFilter":
+                        instance.BunkrIgnoreFilter = r.ReadString();
+                        break;
+                    case "BunkrCleanName":
+                        instance.BunkrCleanName = r.ReadBoolean();
+                        break;
                     case "NetworkTimeout":
                         instance.NetworkTimeout = r.ReadInt32();
                         break;
@@ -380,6 +401,21 @@ namespace XDM.Core.IO
             WriteBoolean(w, instance.AllowSystemDarkTheme, "AllowSystemDarkTheme");
             count++;
             WriteBoolean(w, instance.DoubleClickOpenFile, "DoubleClickOpenFile");
+            count++;
+            WriteBoolean(w, instance.CaptureAllBrowserDownloads, "CaptureAllBrowserDownloads");
+            count++;
+            WriteBoolean(w, instance.FileHostCreateSubfolders, "FileHostCreateSubfolders");
+            count++;
+
+            WriteString(w, instance.GofileAccountToken, "GofileAccountToken");
+            count++;
+            WriteString(w, instance.GofileWebsiteTokenSalt, "GofileWebsiteTokenSalt");
+            count++;
+            WriteString(w, instance.BunkrIncludeFilter, "BunkrIncludeFilter");
+            count++;
+            WriteString(w, instance.BunkrIgnoreFilter, "BunkrIgnoreFilter");
+            count++;
+            WriteBoolean(w, instance.BunkrCleanName, "BunkrCleanName");
             count++;
 
             WriteInt32(w, (int)instance.FileConflictResolution, "FileConflictResolution");

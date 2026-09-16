@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>XDM.FileHosts.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <!-- The resolvers are platform independent; the HttpWebRequest client (FileHostWebClient)
+       depends on the rest of XDM.Core and is replaced by a fake in the tests. -->
+  <ItemGroup>
+    <Compile Include="..\XDM.Core\FileHosts\*.cs" Exclude="..\XDM.Core\FileHosts\FileHostWebClient.cs" LinkBase="FileHosts" />
+    <Compile Include="..\XDM.Core\Translations\TextResource.cs" LinkBase="Translations" />
+    <Content Include="..\Lang\English.txt" LinkBase="Lang" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

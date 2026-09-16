@@ -44,6 +44,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             ChkMonitorClipboard.IsChecked = Config.Instance.MonitorClipboard;
             ChkTimestamp.IsChecked = Config.Instance.FetchServerTimeStamp;
             ChkShowMediaNotification.IsChecked = Config.Instance.ShowNotification;
+            ChkCaptureAll.IsChecked = Config.Instance.CaptureAllBrowserDownloads;
         }
 
         public void UpdateConfig()
@@ -56,6 +57,7 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.MonitorClipboard = ChkMonitorClipboard.IsChecked.HasValue ? ChkMonitorClipboard.IsChecked.Value : false;
             Config.Instance.MinVideoSize = (int)CmbMinVidSize.SelectedItem;
             Config.Instance.ShowNotification = ChkShowMediaNotification.IsChecked.HasValue ? ChkShowMediaNotification.IsChecked.Value : false;
+            Config.Instance.CaptureAllBrowserDownloads = ChkCaptureAll.IsChecked ?? false;
         }
 
         private void BrowserButtonClick(Browser browser)

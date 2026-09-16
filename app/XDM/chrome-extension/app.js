@@ -13,11 +13,32 @@ export default class App {
         this.tabsWatcher = [];
         this.userDisabled = false;
         this.appEnabled = false;
+        this.captureAll = false;
         this.onDownloadCreatedCallback = this.onDownloadCreated.bind(this);
         this.onDeterminingFilenameCallback = this.onDeterminingFilename.bind(this);
         this.onTabUpdateCallback = this.onTabUpdate.bind(this);
         this.activeTabId = -1;
         this.connector = new Connector(this.onMessage.bind(this), this.onDisconnect.bind(this));
+        this.stateRestored = this.restoreState();
+    }
+
+    /**
+     * Chrome stops the extension's service worker when it is idle, which wipes everything
+     * kept in memory. The last configuration received from XDM and the user's on/off choice
+     * are kept in extension storage so a restarted worker behaves the same way.
+     */
+    restoreState() {
+        return Promise.all([
+            chrome.storage.session.get("xdmSync"),
+            chrome.storage.local.get("userDisabled")
+        ]).then(([session, local]) => {
+            this.userDisabled = local.userDisabled === true;
+            if (session.xdmSync && this.connector.isConnected() === undefined) {
+                this.connector.connected = true;
+                this.applyConfig(session.xdmSync);
+            }
+            this.updateActionIcon();
+        }).catch(err => this.logger.log(err));
     }
 
     start() {
@@ -34,23 +55,31 @@ export default class App {
     onMessage(msg) {
         this.logger.log("message from XDM");
         this.logger.log(msg);
+        this.applyConfig(msg);
+        chrome.storage.session.set({ xdmSync: msg }).catch(err => this.logger.log(err));
+        this.updateActionIcon();
+    }
+
+    applyConfig(msg) {
         this.appEnabled = msg.enabled === true;
-        this.fileExts = msg.fileExts;
-        this.blockedHosts = msg.blockedHosts;
+        this.captureAll = msg.captureAll === true;
+        this.fileExts = msg.fileExts || [];
+        this.blockedHosts = msg.blockedHosts || [];
         this.tabsWatcher = msg.tabsWatcher;
         this.videoList = msg.videoList;
         this.requestWatcher.updateConfig({
             mediaExts: msg.requestFileExts,
             blockedHosts: msg.blockedHosts,
             matchingHosts: msg.matchingHosts,
-            mediaTypes: msg.mediaTypes
+            mediaTypes: msg.mediaTypes,
+            captureAll: this.captureAll
         });
-        this.updateActionIcon();
     }
 
     onDisconnect() {
         this.logger.log("Disconnected from native host!");
         this.logger.log("Disconnected...");
+        chrome.storage.session.remove("xdmSync").catch(err => this.logger.log(err));
         this.updateActionIcon();
     }
 
@@ -68,24 +97,37 @@ export default class App {
 
     onDeterminingFilename(download, suggest) {
         this.logger.log("onDeterminingFilename");
-        if (!this.isMonitoringEnabled()) {
-            return;
-        }
         this.logger.log(download);
         let url = download.finalUrl || download.url;
-        this.logger.log(url);
-        if (this.isMonitoringEnabled() && this.shouldTakeOver(url, download.filename)) {
-            chrome.downloads.cancel(
-                download.id,
-                () => chrome.downloads.erase({ id: download.id })
-            );
-            let referrer = download.referrer;
-            if (!referrer && download.finalUrl !== download.url) {
-                referrer = download.url;
-            }
-            this.triggerDownload(url, download.filename,
-                referrer, download.fileSize, download.mime);
+        if (!this.isSupportedProtocol(url)) {
+            return;
         }
+        // Hold the download (returning true) while XDM is asked for its current state:
+        // the worker may have just been woken up by this very download with no config in
+        // memory. Chrome only continues once suggest() is called or the download cancelled.
+        this.stateRestored
+            .then(() => this.userDisabled ? undefined : this.connector.sync())
+            .then(() => {
+                if (this.isMonitoringEnabled() && this.shouldTakeOver(url, download.filename)) {
+                    chrome.downloads.cancel(
+                        download.id,
+                        () => chrome.downloads.erase({ id: download.id })
+                    );
+                    let referrer = download.referrer;
+                    if (!referrer && download.finalUrl !== download.url) {
+                        referrer = download.url;
+                    }
+                    this.triggerDownload(url, download.filename,
+                        referrer, download.fileSize, download.mime);
+                } else {
+                    suggest();
+                }
+            })
+            .catch(err => {
+                this.logger.log(err);
+                suggest();
+            });
+        return true;
     }
 
     onDownloadCreated(download) {
@@ -131,18 +173,25 @@ export default class App {
 
     isSupportedProtocol(url) {
         if (!url) return false;
-        let u = new URL(url);
-        return u.protocol === 'http:' || u.protocol === 'https:';
+        try {
+            let u = new URL(url);
+            return u.protocol === 'http:' || u.protocol === 'https:';
+        } catch {
+            return false;
+        }
     }
 
     shouldTakeOver(url, file) {
-        let u = new URL(url);
         if (!this.isSupportedProtocol(url)) {
             return false;
         }
+        let u = new URL(url);
         let hostName = u.host;
         if (this.blockedHosts.find(item => hostName.indexOf(item) >= 0)) {
             return false;
+        }
+        if (this.captureAll) {
+            return true;
         }
         let path = file || u.pathname;
         let upath = path.toUpperCase();
@@ -261,6 +310,7 @@ export default class App {
         }
         else if (request.type === "cmd") {
             this.userDisabled = request.enabled === false;
+            chrome.storage.local.set({ userDisabled: this.userDisabled }).catch(err => this.logger.log(err));
             this.logger.log("request.enabled:" + request.enabled);
             if (request.enabled && !this.connector.isConnected()) {
                 this.connector.launchApp();

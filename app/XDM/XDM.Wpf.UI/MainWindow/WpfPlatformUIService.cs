@@ -14,6 +14,7 @@ using XDM.Wpf.UI.Dialogs.ChromeIntegrator;
 using XDM.Wpf.UI.Dialogs.CompletedDialog;
 using XDM.Wpf.UI.Dialogs.CredentialDialog;
 using XDM.Wpf.UI.Dialogs.DownloadSelection;
+using XDM.Wpf.UI.Dialogs.FileHostDownload;
 using XDM.Wpf.UI.Dialogs.MediaCapture;
 using XDM.Wpf.UI.Dialogs.NewDownload;
 using XDM.Wpf.UI.Dialogs.NewVideoDownload;
@@ -142,6 +143,12 @@ namespace XDM.Wpf.UI
         {
             var uvc = new BatchDownloadUIController(new BatchDownloadWindow { Owner = GetMainWindow() });
             uvc.Run();
+        }
+
+        public void ShowFileHostDownloadWindow(string? links = null)
+        {
+            var controller = new FileHostDownloadUIController(new FileHostDownloadWindow { Owner = GetMainWindow() }, links);
+            controller.Run();
         }
 
         public void ShowSettingsDialog(int page = 0)

@@ -1,0 +1,152 @@
+﻿<Window x:Class="XDM.Wpf.UI.Dialogs.FileHostDownload.FileHostDownloadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="{StaticResource FH_TITLE}" Height="680" Width="820" MinHeight="520" MinWidth="600"
+        ShowInTaskbar="True" WindowStartupLocation="CenterScreen" Closed="Window_Closed">
+    <Window.Resources>
+        <ContextMenu x:Key="DownloadLaterContextMenu"></ContextMenu>
+        <MenuItem x:Key="DontAddToQueueMenuItem" Header="{StaticResource LBL_QUEUE_OPT3}" Click="DontAddToQueueMenuItem_Click"/>
+        <MenuItem x:Key="QueueAndSchedulerMenuItem" Header="{StaticResource DESC_Q_TITLE}" Click="QueueAndSchedulerMenuItem_Click"/>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="90"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Name="TabOptions" Height="252">
+            <TabItem Header="{StaticResource BAT_LINKS}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.ColumnSpan="3" Text="{StaticResource FH_LINKS_DESC}" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                    <TextBox Name="TxtLinks" Grid.Row="1" Grid.ColumnSpan="3" AcceptsReturn="True" TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             Background="{StaticResource TextBackcolor}" Padding="3"/>
+                    <TextBlock Grid.Row="2" Text="{StaticResource FH_PASSWORD}" VerticalAlignment="Center" Margin="0,8,10,0"/>
+                    <PasswordBox Name="TxtPassword" Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" Padding="3"
+                                 Background="{StaticResource TextBackcolor}" VerticalContentAlignment="Center"/>
+                    <CheckBox Name="ChkSubfolders" Grid.Row="2" Grid.Column="2" Content="{StaticResource FH_SUBFOLDERS}"
+                              VerticalAlignment="Center" Margin="15,8,0,0"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{StaticResource FH_OPTIONS}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{StaticResource FH_GF_TOKEN}" VerticalAlignment="Center" Margin="0,0,10,8"/>
+                    <PasswordBox Name="TxtGofileToken" Grid.Column="1" Margin="0,0,0,8" Padding="3"
+                                 Background="{StaticResource TextBackcolor}" VerticalContentAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{StaticResource FH_GF_SALT}" VerticalAlignment="Center" Margin="0,0,10,8"/>
+                    <TextBox Name="TxtGofileSalt" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8" Padding="3"
+                             Background="{StaticResource TextBackcolor}"/>
+                    <TextBlock Grid.Row="2" Text="{StaticResource FH_BK_INCLUDE}" VerticalAlignment="Center" Margin="0,0,10,8"/>
+                    <TextBox Name="TxtBunkrInclude" Grid.Row="2" Grid.Column="1" Margin="0,0,0,8" Padding="3"
+                             Background="{StaticResource TextBackcolor}"/>
+                    <TextBlock Grid.Row="3" Text="{StaticResource FH_BK_IGNORE}" VerticalAlignment="Center" Margin="0,0,10,8"/>
+                    <TextBox Name="TxtBunkrIgnore" Grid.Row="3" Grid.Column="1" Margin="0,0,0,8" Padding="3"
+                             Background="{StaticResource TextBackcolor}"/>
+                    <CheckBox Name="ChkBunkrCleanName" Grid.Row="4" Grid.Column="1" Content="{StaticResource FH_BK_CLEAN_NAME}"
+                              Margin="0,0,0,8"/>
+                    <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="{StaticResource FH_OPTIONS_HINT}" TextWrapping="Wrap"
+                               Foreground="{StaticResource ToolButtonForecolor}"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{StaticResource LBL_SAVE_IN}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBox Name="TxtSaveIn" Grid.Column="1" Padding="3" Background="{StaticResource TextBackcolor}"/>
+            <Button Name="BtnBrowse" Grid.Column="2" Content="..." Margin="5,0,0,0" Padding="10,0" Click="BtnBrowse_Click"/>
+        </Grid>
+
+        <Grid Grid.Row="2" Margin="0,10,0,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Name="BtnList" Content="{StaticResource FH_LIST}" Padding="15,3" Click="BtnList_Click"/>
+            <Button Name="BtnStop" Grid.Column="1" Content="{StaticResource FH_STOP}" Padding="15,3" Margin="5,0,0,0"
+                    IsEnabled="False" Click="BtnStop_Click"/>
+            <CheckBox Name="ChkSelectAll" Grid.Column="2" Content="{StaticResource VID_CHK}" IsChecked="True"
+                      VerticalAlignment="Center" Margin="15,0,0,0" Click="ChkSelectAll_Click"/>
+            <TextBlock Name="TxtStatus" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right"
+                       TextTrimming="CharacterEllipsis" Margin="15,0,0,0"/>
+        </Grid>
+
+        <ListView Name="LvFiles" Grid.Row="3">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Width="32">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="{StaticResource ND_FILE}" Width="300" DisplayMemberBinding="{Binding Name}"/>
+                    <GridViewColumn Header="{StaticResource FH_COL_FOLDER}" Width="200" DisplayMemberBinding="{Binding Folder}"/>
+                    <GridViewColumn Header="{StaticResource SORT_SIZE}" Width="90" DisplayMemberBinding="{Binding SizeText}"/>
+                    <GridViewColumn Header="{StaticResource FH_COL_HOST}" Width="80" DisplayMemberBinding="{Binding Host}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
+        <ListBox Name="LbLog" Grid.Row="4" Margin="0,10,0,0" BorderThickness="1"
+                 BorderBrush="{StaticResource ControlBordercolor}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" TextWrapping="Wrap"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Grid Grid.Row="5" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Name="BtnDownloadLater" Grid.Column="1" Content="{StaticResource ND_DOWNLOAD_LATER}" Padding="15,3"
+                    Click="BtnDownloadLater_Click"/>
+            <Button Name="BtnDownloadNow" Grid.Column="2" Content="{StaticResource ND_DOWNLOAD_NOW}" Padding="15,3"
+                    Margin="10,0,0,0" Click="BtnDownloadNow_Click"/>
+            <Button Name="BtnCancel" Grid.Column="3" Content="{StaticResource ND_CANCEL}" Padding="15,3"
+                    Margin="10,0,0,0" Click="BtnCancel_Click"/>
+        </Grid>
+    </Grid>
+</Window>

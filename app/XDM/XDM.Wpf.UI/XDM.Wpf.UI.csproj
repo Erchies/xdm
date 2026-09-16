@@ -111,6 +111,27 @@
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
   </ItemGroup>
 
+  <!-- The browser integration buttons launch xdm-guide.exe from the application folder. The installer
+       used to ship it; build it with the app so a plain build can be run as is. -->
+  <ItemGroup>
+    <ProjectReference Include="..\XDM.WinForms.IntegrationUI\XDM.WinForms.IntegrationUI.csproj"
+                      ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true"
+                      GlobalPropertiesToRemove="TargetFramework;Platform" />
+  </ItemGroup>
+
+  <Target Name="CopyIntegrationGuide" AfterTargets="Build">
+    <MSBuild Projects="..\XDM.WinForms.IntegrationUI\XDM.WinForms.IntegrationUI.csproj" Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="IntegrationGuideTarget" />
+    </MSBuild>
+    <ItemGroup>
+      <IntegrationGuideFiles Include="%(IntegrationGuideTarget.RelativeDir)**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(IntegrationGuideFiles)"
+          DestinationFiles="@(IntegrationGuideFiles->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
   <Import Project="..\XDM.Core\XDM.Core.projitems" Label="Shared" />
 
   <Import Project="..\XDM.Messaging\XDM.Messaging.projitems" Label="Shared" />

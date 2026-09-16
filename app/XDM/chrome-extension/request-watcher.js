@@ -37,6 +37,7 @@ export default class RequestWatcher {
         if (config.requestFileExts) {
             this.requestFileExts = config.requestFileExts
         }
+        this.captureAll = config.captureAll === true;
         if (config.urlPatterns) {
             this.urlPatterns = config.urlPatterns.map(pattern => {
                 try {
@@ -51,6 +52,12 @@ export default class RequestWatcher {
 
         let hostName = u.host;
         if (this.blockedHosts.find(h => hostName.indexOf(h) >= 0)) {
+            return false;
+        }
+
+        // With every download sent to XDM, a file the browser is about to save shows the
+        // XDM download window already; reporting it as media too would add a second prompt.
+        if (this.captureAll && this.isFileDownload(res)) {
             return false;
         }
 
@@ -87,6 +94,15 @@ export default class RequestWatcher {
         if (this.matchingHosts.find(h => hostName.indexOf(h) >= 0)) {
             return true;
         }
+    }
+
+    isFileDownload(res) {
+        if (res.type !== "main_frame" && res.type !== "sub_frame" && res.type !== "other") {
+            return false;
+        }
+        let contentDisposition = (res.responseHeaders || [])
+            .find(h => h["name"].toUpperCase() === "CONTENT-DISPOSITION");
+        return !!contentDisposition && /^\s*attachment/i.test(contentDisposition["value"] || "");
     }
 
     onSendHeadersEvent(info) {

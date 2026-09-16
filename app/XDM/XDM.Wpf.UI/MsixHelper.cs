@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using TraceLog;
 using XDM.Core;
 
 namespace XDM.Wpf.UI
@@ -60,6 +62,43 @@ namespace XDM.Wpf.UI
             //            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "chrome-extension");
             CopyFilesRecursively(AppDomain.CurrentDomain.BaseDirectory,
                         Config.AppDir, "chrome-extension");
+        }
+
+        /// <summary>
+        /// The browser loads the extension from the data folder, which is only filled on the
+        /// first run of each version. Refresh it whenever the bundled extension differs, so
+        /// fixes reach the browser after it reloads the extension.
+        /// </summary>
+        public static void UpdateInstalledExtensionIfChanged()
+        {
+            try
+            {
+                var bundled = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "chrome-extension");
+                var installed = Path.Combine(Config.AppDir, "chrome-extension");
+                if (!Directory.Exists(bundled) || !Directory.Exists(installed) || SameFiles(bundled, installed))
+                {
+                    return;
+                }
+                Log.Debug("Updating browser extension in " + installed);
+                CopyExtension();
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error updating browser extension");
+            }
+        }
+
+        private static bool SameFiles(string source, string target)
+        {
+            foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+            {
+                var other = Path.Combine(target, file.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar));
+                if (!File.Exists(other) || !File.ReadAllBytes(file).SequenceEqual(File.ReadAllBytes(other)))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static void CopyFilesRecursively(string sourcePath, string targetPath, string basePath)
