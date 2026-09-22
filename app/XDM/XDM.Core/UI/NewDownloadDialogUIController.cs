@@ -171,6 +171,14 @@ namespace XDM.Core.UI
                 return;
             }
 
+            // No message box here: the skipped download goes to the skipped list (main menu).
+            if (LinkDownloads.SkipIfDuplicate(LinkDownloads.CreateDuplicateChecker(),
+                window.SelectedFileName, selectedFolder, window.Url, out _, out _))
+            {
+                window.DisposeWindow();
+                return;
+            }
+
             var contentLength = 0L;
             var header = message?.GetResponseHeaderFirstValue("Content-Length") ?? message?.GetResponseHeaderFirstValue("content-length");// message?.ResponseHeaders?.Keys.Where(key => key.Equals("content-length", StringComparison.InvariantCultureIgnoreCase));
             if (!string.IsNullOrEmpty(header))
@@ -194,7 +202,8 @@ namespace XDM.Core.UI
                 window.SelectedFileName != fileName ? FileNameFetchMode.None : FileNameFetchMode.FileNameAndExtension,
                 selectedFolder,
                 startImmediately,
-                window.Authentication, window.Proxy ?? Config.Instance.Proxy, queueId, false);
+                window.Authentication, window.Proxy ?? Config.Instance.Proxy, queueId, false,
+                LinkDownloads.IsQuiet(message));
 
             //var http = new SingleSourceHTTPDownloader(new SingleSourceHTTPDownloadInfo
             //{

@@ -164,6 +164,16 @@ namespace XDM.Core
 
         public bool BunkrCleanName { get; set; }
 
+        /// <summary>
+        /// Downloads added from links, lists and GoFile / Bunkr open no progress or completion window.
+        /// </summary>
+        public bool QuietLinkDownloads { get; set; }
+
+        /// <summary>
+        /// Links whose file already exists or is already in the list are skipped and logged.
+        /// </summary>
+        public bool SkipDuplicateDownloads { get; set; } = true;
+
         public bool RunOnLogon
         {
             get => PlatformHelper.IsAutoStartEnabled();

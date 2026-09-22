@@ -100,6 +100,8 @@ namespace XDM.Core.UI
 
             var location = view.DownloadLocation;
             var added = 0;
+            var skipped = 0;
+            var duplicates = LinkDownloads.CreateDuplicateChecker();
             foreach (var file in files)
             {
                 string folder;
@@ -114,6 +116,14 @@ namespace XDM.Core.UI
                     continue;
                 }
 
+                if (LinkDownloads.SkipIfDuplicate(duplicates, file.Name, folder, file.Url, out var reason, out var destination))
+                {
+                    view.AppendLog(FileHostLogLevel.Warning, string.Format(TextResource.GetText("FH_SKIPPED"),
+                        destination, LinkDownloads.GetReasonText(reason)));
+                    skipped++;
+                    continue;
+                }
+
                 var info = new SingleSourceHTTPDownloadInfo
                 {
                     Uri = file.Url,
@@ -123,7 +133,7 @@ namespace XDM.Core.UI
                 };
 
                 var id = ApplicationContext.CoreService.StartDownload(info, file.Name, FileNameFetchMode.None,
-                    folder, startImmediately, null, Config.Instance.Proxy, queueId, false);
+                    folder, startImmediately, null, Config.Instance.Proxy, queueId, false, Config.Instance.QuietLinkDownloads);
                 if (id != null && file.LastModified is DateTime lastModified)
                 {
                     try
@@ -143,6 +153,10 @@ namespace XDM.Core.UI
             if (added > 0)
             {
                 view.CloseWindow();
+            }
+            else if (skipped > 0)
+            {
+                view.SetStatus(string.Format(TextResource.GetText("FH_ALL_SKIPPED"), skipped));
             }
         }
 

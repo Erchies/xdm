@@ -76,21 +76,25 @@ Não use `gh repo sync --force` nem o botão "Discard commits" do GitHub: eles a
 
 ### Onde podem aparecer conflitos
 
-Os arquivos novos (`FileHosts/`, `FileHostDownloadUIController.cs`, `IFileHostDownloadView.cs`, `Dialogs/FileHostDownload/`, `XDM.FileHosts.Tests/`) não existem no original e não entram em conflito. Estes arquivos do XDM original foram editados e podem conflitar:
+Os arquivos novos (`FileHosts/`, `FileHostDownloadUIController.cs`, `IFileHostDownloadView.cs`, `Dialogs/FileHostDownload/`, `XDM.FileHosts.Tests/`, `DownloadStats.cs`, `DuplicateDownloads.cs`, `LinkDownloads.cs`, `MainWindow/AllDownloadsRow.cs`) não existem no original e não entram em conflito. Estes arquivos do XDM original foram editados e podem conflitar:
 
 | Arquivo | O que a integração acrescentou |
 |---|---|
-| `app/XDM/XDM.Core/Config.cs` | propriedades `FileHostCreateSubfolders`, `GofileAccountToken`, `GofileWebsiteTokenSalt`, `BunkrIncludeFilter`, `BunkrIgnoreFilter`, `BunkrCleanName` |
+| `app/XDM/XDM.Core/Config.cs` | propriedades `FileHostCreateSubfolders`, `GofileAccountToken`, `GofileWebsiteTokenSalt`, `BunkrIncludeFilter`, `BunkrIgnoreFilter`, `BunkrCleanName`, `QuietLinkDownloads`, `SkipDuplicateDownloads` |
 | `app/XDM/XDM.Core/IO/ConfigIO.cs` | leitura e gravação dessas propriedades (os dois lados precisam continuar batendo) |
-| `app/XDM/XDM.Core/ApplicationCore.cs` | `using XDM.Core.FileHosts`; em `DownloadFinished`, a chamada `FileHostFileDates.Apply` (data de envio do Bunkr); em `GetStateFiles`, o arquivo `<id>.filedate` |
+| `app/XDM/XDM.Core/ApplicationCore.cs` | `using XDM.Core.FileHosts`; em `DownloadFinished`, `FileHostFileDates.Apply` (data de envio do Bunkr) e `LinkDownloads.UnmarkQuiet`; em `GetStateFiles`, os arquivos `<id>.filedate` e `<id>.quiet`; parâmetro `quiet` de `StartDownload` (fila, `ResumeDownload`, `RestartDownload`); `DownloadStats.Update`/`Remove` nos eventos de progresso, fim, falha e cancelamento; checagem de duplicado em `AddDownload` |
+| `app/XDM/XDM.Core/IApplicationCore.cs` | parâmetro opcional `quiet` em `StartDownload` |
 | `app/XDM/XDM.Core/IPlatformUIService.cs` | método `ShowFileHostDownloadWindow` |
-| `app/XDM/XDM.Core/UI/NewDownloadDialogUIController.cs` | desvio de links GoFile/Bunkr para a janela nova |
+| `app/XDM/XDM.Core/UI/NewDownloadDialogUIController.cs` | desvio de links GoFile/Bunkr para a janela nova; checagem de duplicado e `quiet` em `OnDownloadClicked` |
+| `app/XDM/XDM.Core/UI/DownloadSelectionUIController.cs` e `VideoDownloaderUIController.cs` | checagem de duplicado (só na lista) e `quiet` em `StartDownload` |
 | `app/XDM/XDM.Core/XDM.Core.projitems` | lista dos arquivos novos |
-| `app/XDM/XDM.Wpf.UI/MainWindow/MainWindow.xaml` e `.xaml.cs` | item de menu `menuFileHostDownload` (índice 3 do menu Novo) |
+| `app/XDM/XDM.Wpf.UI/MainWindow/MainWindow.xaml` e `.xaml.cs` | item de menu `menuFileHostDownload` (índice 3 do menu Novo); aba "Todos" (`lvAll`, índice 0 da lista de categorias, o que desloca Em andamento para 1 e Concluídos para 2); colunas de velocidade e tempo restante; `TxtStats` no rodapé; item `menuSkippedDownloads` |
+| `app/XDM/XDM.Wpf.UI/MainWindow/InProgressDownloadEntryWrapper.cs` | propriedades `StateText`, `SpeedText`, `EtaText`, `SpeedValue` e `OnStatusChanged` |
+| `app/XDM/XDM.Wpf.UI/Dialogs/Settings/GeneralSettingsView.xaml` e `.xaml.cs` | caixas `ChkQuietLinkDownloads` e `ChkSkipDuplicates` (junto de `ChkOverwrite`) |
 | `app/XDM/XDM.Wpf.UI/MainWindow/WpfPlatformUIService.cs` | abre a janela nova |
 | `app/XDM/XDM.Gtk.UI/GtkPlatformUIService.cs` | aviso de "não disponível" no Linux |
 | `app/XDM/XDM.Wpf.UI/XDM.Wpf.UI.csproj` | compila e copia o `xdm-guide.exe` (integração com navegadores) |
-| `app/XDM/Lang/English.txt` e `Portuguese Brazil.txt` | chaves `MENU_FILEHOST_DOWNLOAD` e `FH_*` no fim do arquivo |
+| `app/XDM/Lang/English.txt` e `Portuguese Brazil.txt` | chaves `MENU_FILEHOST_DOWNLOAD`, `FH_*`, `SKIP_*`, `SETTINGS_QUIET_LINKS`, `SETTINGS_SKIP_DUPLICATES`, `MENU_SKIPPED_DOWNLOADS`, `MSG_NO_SKIPPED_DOWNLOADS`, `ALL_DOWNLOADS`, `COL_SPEED` e `SB_*` no fim do arquivo |
 
 Ao resolver um conflito, mantenha os dois lados: o que veio do original e o que a integração acrescentou. Se o original **adicionar um método** a `IPlatformUIService`, a compilação acusa em `WpfPlatformUIService` e `GtkPlatformUIService` até você implementar nos dois.
 

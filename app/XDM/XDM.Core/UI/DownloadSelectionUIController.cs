@@ -96,8 +96,13 @@ namespace XDM.Core.UI
             return true;
         }
 
-        private void AddDownload(IDownloadEntryWrapper wrapper, bool startImmediately, string? queueId)
+        private void AddDownload(IDownloadEntryWrapper wrapper, bool startImmediately, string? queueId,
+            DuplicateDownloadChecker? duplicates)
         {
+            if (LinkDownloads.SkipIfDuplicate(duplicates, wrapper.Name, view.DownloadLocation, GetUrl(wrapper.DownloadEntry), out _, out _))
+            {
+                return;
+            }
             ApplicationContext.CoreService.StartDownload(
                         wrapper.DownloadEntry,
                         wrapper.Name,
@@ -107,9 +112,19 @@ namespace XDM.Core.UI
                         view.Authentication,
                         view.Proxy ?? Config.Instance.Proxy,
                         queueId,
-                        false
+                        false,
+                        Config.Instance.QuietLinkDownloads
                     );
         }
+
+        private static string? GetUrl(IRequestData request) => request switch
+        {
+            SingleSourceHTTPDownloadInfo shi => shi.Uri,
+            DualSourceHTTPDownloadInfo dhi => dhi.Uri1,
+            MultiSourceHLSDownloadInfo mhi => mhi.VideoUri,
+            MultiSourceDASHDownloadInfo mdi => mdi.Url,
+            _ => null
+        };
 
         private void DownloadSelectedItems(bool startImmediately, string? queueId)
         {
@@ -124,11 +139,12 @@ namespace XDM.Core.UI
                 return;
             }
 
+            var duplicates = LinkDownloads.CreateDuplicateChecker();
             foreach (var item in view.SelectedItems)
             {
                 if (item.IsSelected)
                 {
-                    AddDownload(item, startImmediately, queueId);
+                    AddDownload(item, startImmediately, queueId, duplicates);
                 }
             }
             view.CloseWindow();

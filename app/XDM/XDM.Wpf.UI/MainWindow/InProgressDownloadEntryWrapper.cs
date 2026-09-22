@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using Translations;
 using XDM.Core.UI;
 using XDM.Core;
 using XDM.Core.Util;
@@ -54,12 +55,32 @@ namespace XDM.Wpf.UI
             {
                 entry.Progress = value;
                 OnPropertyChanged("Progress");
-                OnPropertyChanged("Status");
-                OnPropertyChanged("StatusText");
+                OnStatusChanged();
             }
         }
 
         public string StatusText => Helpers.GenerateStatusText(this.entry);
+
+        /// <summary>
+        /// Status alone; speed and time left have their own columns.
+        /// </summary>
+        public string StateText => entry.Status switch
+        {
+            DownloadStatus.Downloading => TextResource.GetText("STAT_DOWNLOADING"),
+            DownloadStatus.Stopped => TextResource.GetText("STAT_STOPPED"),
+            DownloadStatus.Finished => TextResource.GetText("STAT_FINISHED"),
+            DownloadStatus.Waiting => TextResource.GetText("STAT_WAITING"),
+            _ => entry.Status.ToString()
+        };
+
+        public string SpeedText => entry.Status == DownloadStatus.Downloading ? entry.DownloadSpeed ?? string.Empty : string.Empty;
+
+        public string EtaText => entry.Status == DownloadStatus.Downloading ? entry.ETA ?? string.Empty : string.Empty;
+
+        /// <summary>
+        /// Bytes per second, for sorting by speed.
+        /// </summary>
+        public double SpeedValue => entry.Status == DownloadStatus.Downloading ? DownloadStats.GetSpeed(entry.Id) : 0;
 
         public InProgressDownloadItem DownloadEntry => this.entry;
 
@@ -71,8 +92,7 @@ namespace XDM.Wpf.UI
             set
             {
                 entry.Status = value;
-                OnPropertyChanged("Status");
-                OnPropertyChanged("StatusText");
+                OnStatusChanged();
             }
         }
 
@@ -82,8 +102,7 @@ namespace XDM.Wpf.UI
             set
             {
                 entry.DownloadSpeed = value;
-                OnPropertyChanged("Status");
-                OnPropertyChanged("StatusText");
+                OnStatusChanged();
             }
         }
 
@@ -93,8 +112,7 @@ namespace XDM.Wpf.UI
             set
             {
                 entry.ETA = value;
-                OnPropertyChanged("Status");
-                OnPropertyChanged("StatusText");
+                OnStatusChanged();
             }
         }
 
@@ -103,8 +121,17 @@ namespace XDM.Wpf.UI
         /// </summary>
         public void UpdateStatusText()
         {
+            OnStatusChanged();
+        }
+
+        private void OnStatusChanged()
+        {
             OnPropertyChanged("Status");
             OnPropertyChanged("StatusText");
+            OnPropertyChanged(nameof(StateText));
+            OnPropertyChanged(nameof(SpeedText));
+            OnPropertyChanged(nameof(EtaText));
+            OnPropertyChanged(nameof(SpeedValue));
         }
 
         private void OnPropertyChanged(string propName)

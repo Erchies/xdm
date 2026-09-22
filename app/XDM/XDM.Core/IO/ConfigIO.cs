@@ -211,6 +211,12 @@ namespace XDM.Core.IO
                     case "BunkrCleanName":
                         instance.BunkrCleanName = r.ReadBoolean();
                         break;
+                    case "QuietLinkDownloads":
+                        instance.QuietLinkDownloads = r.ReadBoolean();
+                        break;
+                    case "SkipDuplicateDownloads":
+                        instance.SkipDuplicateDownloads = r.ReadBoolean();
+                        break;
                     case "NetworkTimeout":
                         instance.NetworkTimeout = r.ReadInt32();
                         break;
@@ -416,6 +422,10 @@ namespace XDM.Core.IO
             WriteString(w, instance.BunkrIgnoreFilter, "BunkrIgnoreFilter");
             count++;
             WriteBoolean(w, instance.BunkrCleanName, "BunkrCleanName");
+            count++;
+            WriteBoolean(w, instance.QuietLinkDownloads, "QuietLinkDownloads");
+            count++;
+            WriteBoolean(w, instance.SkipDuplicateDownloads, "SkipDuplicateDownloads");
             count++;
 
             WriteInt32(w, (int)instance.FileConflictResolution, "FileConflictResolution");

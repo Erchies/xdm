@@ -19,6 +19,7 @@
   <ItemGroup>
     <Compile Include="..\XDM.Core\FileHosts\*.cs" Exclude="..\XDM.Core\FileHosts\FileHostWebClient.cs" LinkBase="FileHosts" />
     <Compile Include="..\XDM.Core\Translations\TextResource.cs" LinkBase="Translations" />
+    <Compile Include="..\XDM.Core\DownloadStats.cs;..\XDM.Core\DuplicateDownloads.cs" LinkBase="Core" />
     <Content Include="..\Lang\English.txt" LinkBase="Lang" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

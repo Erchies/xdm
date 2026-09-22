@@ -64,7 +64,9 @@
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuMediaGrabber" Header="{StaticResource MSG_MEDIA_CAPTURE}" Click="menuMediaGrabber_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
-            <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" Click="menuClearFinished_Click" 
+            <MenuItem Name="menuClearFinished" Header="{StaticResource MENU_DELETE_COMPLETED}" Click="menuClearFinished_Click"
+                      Foreground="{StaticResource ControlForecolor}"/>
+            <MenuItem Name="menuSkippedDownloads" Header="{StaticResource MENU_SKIPPED_DOWNLOADS}" Click="menuSkippedDownloads_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
             <MenuItem Name="menuExport" Header="{StaticResource MENU_EXPORT}" Click="menuExport_Click"
                       Foreground="{StaticResource ControlForecolor}"/>
@@ -518,7 +520,11 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Padding="10,0,7,2" 
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Padding="10,0,7,2"
                                Foreground="{StaticResource ToolButtonForecolor}" 
                                Background="{StaticResource StatusbarBackcolor}"
                                VerticalAlignment="Center" Text="{StaticResource SETTINGS_MONITORING}"/>
@@ -556,6 +562,10 @@
                                 <TextBlock Padding="3,0,3,2" VerticalAlignment="Center" Text="{StaticResource DESC_Q_TITLE}"/>
                             </StackPanel>
                         </Button>
+                        <TextBlock Grid.Row="1" Grid.ColumnSpan="5" Name="TxtStats" Padding="10,5,10,0" VerticalAlignment="Center"
+                                   HorizontalAlignment="Stretch" TextTrimming="CharacterEllipsis"
+                                   Foreground="{StaticResource ToolButtonForecolor}"
+                                   Background="{StaticResource StatusbarBackcolor}"/>
                         <Button Name="BtnHelp" Grid.Column="4" Foreground="{StaticResource ToolButtonForecolor}"
                             Margin="0,0" Padding="0" BorderThickness="0" Background="{StaticResource StatusbarBackcolor}" Click="BtnHelp_Click">
                             <StackPanel Orientation="Horizontal" Margin="5,0,10,0">
@@ -639,7 +649,15 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="150" DisplayMemberBinding="{Binding StatusText}" />
+                                <GridViewColumn Header="{StaticResource SORT_STATUS}" Width="90" DisplayMemberBinding="{Binding StateText}" />
+                                <GridViewColumn Width="90" DisplayMemberBinding="{Binding SpeedText}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="SpeedValue">
+                                            <TextBlock Text="{StaticResource COL_SPEED}"/>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{StaticResource MSG_TIME_LEFT}" Width="90" DisplayMemberBinding="{Binding EtaText}" />
                             </GridView>
                         </ListView.View>
                         <ListView.ItemContainerStyle>
@@ -713,6 +731,94 @@
                                 <Setter Property="ContextMenu" Value="{StaticResource lvFinishedContextMenu}" />
                                 <Setter Property="Padding" Value="0,0" />
                                 <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
+                    <ListView Name="lvAll"
+                          VerticalContentAlignment="Stretch"
+                          BorderThickness="0"
+                          HorizontalAlignment="Stretch"
+                          Grid.Column="0" Grid.Row="0"
+                          Visibility="Collapsed"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          GridViewColumnHeader.Click="lvAll_Click">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Width="400">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="Name">
+                                            <TextBlock Padding="40,0" Text="{StaticResource SORT_NAME}" />
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path SnapsToDevicePixels="True"
+                                                  VerticalAlignment="Center" Margin="5,5" StrokeThickness="0" Stretch="None" Fill="{StaticResource ListViewIconForecolor}"
+                                                  Width="24" Height="24"
+                                                  Data="{Binding Path=Name, Converter={StaticResource FileExtensionToVectorImageConverter}}"
+                                                  />
+                                                <TextBlock Text="{Binding Name}" Margin="5,5" VerticalAlignment="Center"></TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="80">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="DateAdded" Name="lvAll_DateAdded">
+                                            <TextBlock Text="{StaticResource SORT_DATE}"/>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DateAdded, StringFormat=d}"  />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="60"
+                                            DisplayMemberBinding="{Binding Size, Converter={StaticResource FileSizeValueConverter}}" >
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="Size">
+                                            <TextBlock Text="{StaticResource SORT_SIZE}"/>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn Header="%" Width="50" x:Name="pAll" >
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ProgressBar Width="{Binding Path=Width, ElementName=pAll}"
+                                                     Value="{Binding Progress, Mode=OneWay}" Height="5"
+                                                     Maximum="100"   />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Width="90" DisplayMemberBinding="{Binding StateText}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="StateText">
+                                            <TextBlock Text="{StaticResource SORT_STATUS}"/>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn Width="90" DisplayMemberBinding="{Binding SpeedText}">
+                                    <GridViewColumn.Header>
+                                        <GridViewColumnHeader Tag="SpeedValue">
+                                            <TextBlock Text="{StaticResource COL_SPEED}"/>
+                                        </GridViewColumnHeader>
+                                    </GridViewColumn.Header>
+                                </GridViewColumn>
+                                <GridViewColumn Header="{StaticResource MSG_TIME_LEFT}" Width="90" DisplayMemberBinding="{Binding EtaText}" />
+                            </GridView>
+                        </ListView.View>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
+                                <Setter Property="ContextMenu" Value="{StaticResource lvInProgressContextMenu}" />
+                                <Setter Property="Padding" Value="0,0" />
+                                <EventSetter Event="MouseDoubleClick" Handler="ListViewItem_MouseDoubleClick"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFinished}" Value="True">
+                                        <Setter Property="ContextMenu" Value="{StaticResource lvFinishedContextMenu}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>

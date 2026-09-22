@@ -80,9 +80,10 @@ namespace XDM.Core
             AuthenticationInfo? authentication,
             ProxyInfo? proxyInfo,
             string? queueId,
-            bool convertToMp3)
+            bool convertToMp3,
+            bool quiet = false)
         {
-            Log.Debug($"Starting download: {fileName} {fileNameFetchMode} {convertToMp3}");
+            Log.Debug($"Starting download: {fileName} {fileNameFetchMode} {convertToMp3} {quiet}");
 
             IBaseDownloader? http;
 
@@ -120,7 +121,11 @@ namespace XDM.Core
             }
             http.SetFileName(FileHelper.SanitizeFileName(fileName), fileNameFetchMode);
             http.SetTargetDirectory(targetFolder);
-            StartDownload(http, targetFolder, startImmediately, authentication, proxyInfo);
+            if (quiet)
+            {
+                LinkDownloads.MarkQuiet(http.Id!);
+            }
+            StartDownload(http, targetFolder, startImmediately, authentication, proxyInfo, quiet);
             return http.Id;
         }
 
@@ -128,7 +133,8 @@ namespace XDM.Core
             string? targetDir,
             bool startImmediately,
             AuthenticationInfo? authentication,
-            ProxyInfo? proxyInfo)
+            ProxyInfo? proxyInfo,
+            bool quiet)
         {
             if (!awakePingTimer.Enabled)
             {
@@ -145,7 +151,7 @@ namespace XDM.Core
             else if (liveDownloads.Count >= Config.Instance.MaxParallelDownloads)
             {
                 startImmediately = false;
-                queuedDownloads.Add(id, false);
+                queuedDownloads.Add(id, quiet);
             }
 
             ApplicationContext.Application.AddItemToTop(id, download.TargetFileName, targetDir, DateTime.Now,
@@ -155,7 +161,7 @@ namespace XDM.Core
 
             if (startImmediately)
             {
-                this.liveDownloads.Add(download.Id, new KeyValuePair<IBaseDownloader, bool>(download, false));
+                this.liveDownloads.Add(download.Id, new KeyValuePair<IBaseDownloader, bool>(download, quiet));
                 download.Started += HandleDownloadStart;
                 download.Probed += HandleProbeResult;
                 download.Finished += DownloadFinished;
@@ -164,7 +170,7 @@ namespace XDM.Core
                 download.Cancelled += DownloadCancelled;
                 download.Failed += DownloadFailed;
 
-                var showProgress = Config.Instance.ShowProgressWindow;
+                var showProgress = Config.Instance.ShowProgressWindow && !quiet;
                 if (showProgress)
                 {
                     ApplicationContext.Application.RunOnUiThread(() =>
@@ -214,6 +220,11 @@ namespace XDM.Core
             {
                 var url = message.Url;
                 var file = FileHelper.SanitizeFileName(message.File ?? FileHelper.GetFileName(new Uri(message.Url)));
+                if (LinkDownloads.SkipIfDuplicate(LinkDownloads.CreateDuplicateChecker(), file, null, url, out _, out _))
+                {
+                    Log.Debug("Skipped duplicate download: " + file);
+                    return;
+                }
                 StartDownload(
                     new SingleSourceHTTPDownloadInfo
                     {
@@ -227,7 +238,7 @@ namespace XDM.Core
                     null,
                     true,
                     null,
-                    Config.Instance.Proxy, null, false);
+                    Config.Instance.Proxy, null, false, LinkDownloads.IsQuiet(message));
             }
             else
             {
@@ -260,9 +271,11 @@ namespace XDM.Core
             foreach (var item in list)
             {
                 if (liveDownloads.ContainsKey(item.Key) || queuedDownloads.ContainsKey(item.Key)) return;
+                // Link downloads added with "no windows" stay without windows when resumed.
+                var quiet = nonInteractive || LinkDownloads.IsMarkedQuiet(item.Key);
                 if (liveDownloads.Count >= Config.Instance.MaxParallelDownloads)
                 {
-                    queuedDownloads.Add(item.Key, nonInteractive);
+                    queuedDownloads.Add(item.Key, quiet);
                     ApplicationContext.Application.RunOnUiThread(() =>
                     {
                         ApplicationContext.Application.SetDownloadStatusWaiting(item.Key);
@@ -301,10 +314,10 @@ namespace XDM.Core
                 download.Failed += DownloadFailed;
                 download.SetTargetDirectory(item.Value.TargetDir);
                 download.SetFileName(item.Value.Name, item.Value.FileNameFetchMode);
-                liveDownloads[item.Key] = new KeyValuePair<IBaseDownloader, bool>(download, nonInteractive);
+                liveDownloads[item.Key] = new KeyValuePair<IBaseDownloader, bool>(download, quiet);
 
                 var showProgressWindow = Config.Instance.ShowProgressWindow;
-                if (showProgressWindow && !nonInteractive)
+                if (showProgressWindow && !quiet)
                 {
                     var prgWin = GetProgressWindow(download);// CreateOrGetProgressWindow(download);
                     ApplicationContext.Application.RunOnUiThread(() =>
@@ -385,6 +398,7 @@ namespace XDM.Core
             lock (this)
             {
                 var http = source as IBaseDownloader;
+                DownloadStats.Update(http.Id, args.DownloadSpeed, args.Downloaded, http.FileSize);
                 ApplicationContext.Application.UpdateProgress(http.Id, args.Progress, args.DownloadSpeed, args.Eta);
                 if (activeProgressWindows.ContainsKey(http.Id))
                 {
@@ -419,7 +433,9 @@ namespace XDM.Core
             {
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
+                DownloadStats.Remove(http.Id);
                 RemoveStateFiles(http.Id, false);
+                LinkDownloads.UnmarkQuiet(http.Id);
                 FileHostFileDates.Apply(Config.DataDir, http.Id, http.TargetFile);
                 ApplicationContext.Application.DownloadFinished(http.Id, http.FileSize < 0 ? new FileInfo(http.TargetFile).Length : http.FileSize, http.TargetFile);
 
@@ -465,6 +481,7 @@ namespace XDM.Core
                 Log.Debug("Download failed: " + args.ErrorCode);
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
+                DownloadStats.Remove(http.Id);
                 liveDownloads.Remove(http.Id);
                 ApplicationContext.Application.DownloadFailed(http.Id);
                 if (activeProgressWindows.ContainsKey(http.Id))
@@ -485,6 +502,7 @@ namespace XDM.Core
                 Log.Debug("Download cancelled");
                 var http = source as IBaseDownloader;
                 DetachEventHandlers(http);
+                DownloadStats.Remove(http.Id);
                 liveDownloads.Remove(http.Id);
                 ApplicationContext.Application.DownloadCanelled(http.Id);
 
@@ -697,6 +715,7 @@ namespace XDM.Core
             {
                 files.Add(Path.Combine(Config.DataDir, id + ".info"));
                 files.Add(FileHostFileDates.PathFor(Config.DataDir, id));
+                files.Add(LinkDownloads.QuietMarkerPath(id));
             }
             files.Add(Path.Combine(Config.DataDir, id + ".state"));
             files.Add(Path.Combine(Config.DataDir, id + ".state.1"));
@@ -833,8 +852,9 @@ namespace XDM.Core
                     this.StartDownload(request, entry.Name,
                                    FileNameFetchMode.FileNameAndExtension,
                                    entry.TargetDir, true, entry.Authentication, entry.Proxy, null,
-                                   convertToMp3);
+                                   convertToMp3, LinkDownloads.IsMarkedQuiet(entry.Id));
                     RemoveDownload(entry, false, false);
+                    LinkDownloads.UnmarkQuiet(entry.Id);
                 }
             }
             catch (Exception ex)

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -50,12 +51,24 @@ namespace XDM.Wpf.UI
             = new ObservableCollection<InProgressDownloadEntryWrapper>();
         private ObservableCollection<FinishedDownloadEntryWrapper> finishedList
             = new ObservableCollection<FinishedDownloadEntryWrapper>();
+        private ObservableCollection<AllDownloadsRow> allList = new ObservableCollection<AllDownloadsRow>();
+
+        // Positions in the category list: "All" first, then the original XDM entries.
+        private const int AllIndex = 0;
+        private const int InProgressIndex = 1;
+        private const int FinishedIndex = 2;
+        private const int FirstCategoryIndex = 3;
 
         private IButton newButton, deleteButton, pauseButton, resumeButton, openFileButton, openFolderButton;
         private GridViewColumnHeader? finishedListViewSortCol = null;
         private SortAdorner? finishedListViewSortAdorner = null;
         private GridViewColumnHeader? inProgressListViewSortCol = null;
         private SortAdorner? inProgressListViewSortAdorner = null;
+        private GridViewColumnHeader? allListViewSortCol = null;
+        private SortAdorner? allListViewSortAdorner = null;
+        private DispatcherTimer statsTimer;
+        private int statsTicks;
+        private string freeSpaceText = string.Empty;
         private MessageLoop messageLoop;
         private Win32ClipboarMonitor clipboarMonitor;
 
@@ -72,6 +85,7 @@ namespace XDM.Wpf.UI
             openFileButton = new ButtonWrapper(this.BtnOpen);
             openFolderButton = new ButtonWrapper(this.BtnOpenFolder);
             var categories = new List<CategoryWrapper>();
+            categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = TextResource.GetText("ALL_DOWNLOADS"), VectorIcon = "ri-list-settings-fill" });
             categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = TextResource.GetText("ALL_UNFINISHED"), VectorIcon = "ri-arrow-down-line" });
             categories.Add(new CategoryWrapper() { IsTopLevel = true, DisplayName = TextResource.GetText("ALL_FINISHED"), VectorIcon = "ri-check-line" });
             categories.AddRange(Config.Instance.Categories.Select(c => new CategoryWrapper(c)
@@ -82,6 +96,7 @@ namespace XDM.Wpf.UI
 
             lvInProgress.ItemsSource = inProgressList;
             lvFinished.ItemsSource = finishedList;
+            lvAll.ItemsSource = allList;
 
             lvInProgress.SelectionChanged += (sender, args) =>
             {
@@ -89,6 +104,11 @@ namespace XDM.Wpf.UI
             };
 
             lvFinished.SelectionChanged += (sender, args) =>
+            {
+                this.SelectionChanged?.Invoke(sender, args);
+            };
+
+            lvAll.SelectionChanged += (sender, args) =>
             {
                 this.SelectionChanged?.Invoke(sender, args);
             };
@@ -101,15 +121,39 @@ namespace XDM.Wpf.UI
                 }
             };
 
-            SwitchToFinishedView();
+            lvCategory.SelectedIndex = AllIndex;
             this.Loaded += MainWindow_Loaded;
             CreateMenuItems();
+
+            statsTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            statsTimer.Tick += (_, _) => UpdateStatusBarStats();
+            statsTimer.Start();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             FinishedListViewInitialSortIfNotAlreadySorted();
+            AllListViewInitialSortIfNotAlreadySorted();
             UpdateBrowserMonitorButton();
+            UpdateStatusBarStats();
+        }
+
+        private void AllListViewInitialSortIfNotAlreadySorted()
+        {
+            //sort the "All" list view by date
+            if (allListViewSortCol == null)
+            {
+                var col = (GridViewColumnHeader)FindName("lvAll_DateAdded");
+                var layer = AdornerLayer.GetAdornerLayer(col);
+                if (layer != null)
+                {
+                    allListViewSortCol = col;
+                    allListViewSortAdorner = new SortAdorner(allListViewSortCol, ListSortDirection.Descending);
+                    layer.Add(allListViewSortAdorner);
+                }
+                lvAll.Items.SortDescriptions.Clear();
+                lvAll.Items.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
+            }
         }
 
         private void InProgressListViewInitialSortIfNotAlreadySorted()
@@ -158,29 +202,42 @@ namespace XDM.Wpf.UI
         private void ApplyFilter()
         {
             var index = lvCategory.SelectedIndex;
-            if (index == 0)
+            if (index == AllIndex)
             {
+                lvAll.Visibility = Visibility.Visible;
+                lvInProgress.Visibility = Visibility.Collapsed;
+                lvFinished.Visibility = Visibility.Collapsed;
+                AllListViewInitialSortIfNotAlreadySorted();
+
+                var view = (ListCollectionView)CollectionViewSource.GetDefaultView(lvAll.ItemsSource);
+                view.Filter = a => Helpers.IsOfCategoryOrMatchesKeyword(((AllDownloadsRow)a).Name, TxtSearch.Text, null);
+                CategoryChanged?.Invoke(this, new CategoryChangedEventArgs { Level = 0, Index = 0 });
+            }
+            else if (index == InProgressIndex)
+            {
+                lvAll.Visibility = Visibility.Collapsed;
                 lvInProgress.Visibility = Visibility.Visible;
                 lvFinished.Visibility = Visibility.Collapsed;
                 InProgressListViewInitialSortIfNotAlreadySorted();
 
                 CategoryChanged?.Invoke(this, new CategoryChangedEventArgs { Level = 0, Index = 0 });
             }
-            else if (index > 0)
+            else if (index >= FinishedIndex)
             {
+                lvAll.Visibility = Visibility.Collapsed;
                 lvInProgress.Visibility = Visibility.Collapsed;
                 lvFinished.Visibility = Visibility.Visible;
 
                 ListCollectionView view = (ListCollectionView)
                         CollectionViewSource.GetDefaultView(lvFinished.ItemsSource);
-                if (index > 1)
+                if (index >= FirstCategoryIndex)
                 {
                     CategoryWrapper? cat = (CategoryWrapper)lvCategory.SelectedItem;
                     view.Filter = a => IsCategoryMatched((FinishedDownloadEntryWrapper)a, cat);
                     CategoryChanged?.Invoke(this, new CategoryChangedEventArgs
                     {
                         Level = 1,
-                        Index = index - 2,
+                        Index = index - FirstCategoryIndex,
                         Category = cat.category
                     });
                 }
@@ -231,6 +288,7 @@ namespace XDM.Wpf.UI
                     value.Select(x => new FinishedDownloadEntryWrapper(x)));
                 this.lvFinished.ItemsSource = finishedList;
                 FinishedListViewInitialSortIfNotAlreadySorted();
+                RebuildAllList();
             }
         }
 
@@ -243,14 +301,21 @@ namespace XDM.Wpf.UI
                     value.Select(x => new InProgressDownloadEntryWrapper(x)));
                 this.lvInProgress.ItemsSource = inProgressList;
                 InProgressListViewInitialSortIfNotAlreadySorted();
+                RebuildAllList();
             }
         }
 
+        // In the "All" list the selection is split by kind, so the existing actions (pause,
+        // open, delete...) keep working on the part they understand.
         public IList<IInProgressDownloadRow> SelectedInProgressRows =>
-            this.lvInProgress.SelectedItems.OfType<IInProgressDownloadRow>().ToList();
+            lvCategory.SelectedIndex == AllIndex
+            ? this.lvAll.SelectedItems.OfType<AllDownloadsRow>().Select(r => r.InProgress).OfType<IInProgressDownloadRow>().ToList()
+            : this.lvInProgress.SelectedItems.OfType<IInProgressDownloadRow>().ToList();
 
         public IList<IFinishedDownloadRow> SelectedFinishedRows =>
-            this.lvFinished.SelectedItems.OfType<IFinishedDownloadRow>().ToList();
+            lvCategory.SelectedIndex == AllIndex
+            ? this.lvAll.SelectedItems.OfType<AllDownloadsRow>().Select(r => r.Finished).OfType<IFinishedDownloadRow>().ToList()
+            : this.lvFinished.SelectedItems.OfType<IFinishedDownloadRow>().ToList();
 
         public IButton NewButton => newButton;
 
@@ -264,7 +329,11 @@ namespace XDM.Wpf.UI
 
         public IButton OpenFolderButton => openFolderButton;
 
-        public bool IsInProgressViewSelected => lvCategory.SelectedIndex == 0;
+        /// <summary>
+        /// In the "All" list this follows the selection: with finished rows selected, the finished actions apply.
+        /// </summary>
+        public bool IsInProgressViewSelected => lvCategory.SelectedIndex == InProgressIndex
+            || (lvCategory.SelectedIndex == AllIndex && !lvAll.SelectedItems.OfType<AllDownloadsRow>().Any(r => r.IsFinished));
 
         public IMenuItem[] MenuItems => this.menuItems;
 
@@ -280,17 +349,27 @@ namespace XDM.Wpf.UI
 
         public void AddToTop(InProgressDownloadItem entry)
         {
-            this.inProgressList.Add(new InProgressDownloadEntryWrapper(entry));
+            var row = new InProgressDownloadEntryWrapper(entry);
+            this.inProgressList.Add(row);
+            this.allList.Add(new AllDownloadsRow(row));
         }
 
         public void AddToTop(FinishedDownloadItem entry)
         {
-            this.finishedList.Add(new FinishedDownloadEntryWrapper(entry));
+            var row = new FinishedDownloadEntryWrapper(entry);
+            this.finishedList.Add(row);
+            this.allList.Add(new AllDownloadsRow(row));
         }
 
+        /// <summary>
+        /// XDM jumps between its lists as downloads start and finish; the "All" list already shows both.
+        /// </summary>
         public void SwitchToInProgressView()
         {
-            lvCategory.SelectedIndex = 0;
+            if (lvCategory.SelectedIndex != AllIndex)
+            {
+                lvCategory.SelectedIndex = InProgressIndex;
+            }
         }
 
         public void ClearInProgressViewSelection()
@@ -300,7 +379,10 @@ namespace XDM.Wpf.UI
 
         public void SwitchToFinishedView()
         {
-            lvCategory.SelectedIndex = 1;
+            if (lvCategory.SelectedIndex != AllIndex)
+            {
+                lvCategory.SelectedIndex = FinishedIndex;
+            }
         }
 
         public void ClearFinishedViewSelection()
@@ -339,11 +421,13 @@ namespace XDM.Wpf.UI
         public void Delete(IInProgressDownloadRow row)
         {
             this.inProgressList.Remove((InProgressDownloadEntryWrapper)row);
+            RemoveFromAllList(row);
         }
 
         public void Delete(IFinishedDownloadRow row)
         {
             this.finishedList.Remove((FinishedDownloadEntryWrapper)row);
+            RemoveFromAllList(row);
         }
 
         public void DeleteAllFinishedDownloads()
@@ -354,6 +438,11 @@ namespace XDM.Wpf.UI
                 return;
             }
             finishedList.Clear();
+            foreach (var row in allList.Where(r => r.IsFinished).ToList())
+            {
+                row.Detach();
+                allList.Remove(row);
+            }
         }
 
         public void Delete(IEnumerable<IInProgressDownloadRow> rows)
@@ -361,6 +450,7 @@ namespace XDM.Wpf.UI
             foreach (var row in rows)
             {
                 inProgressList.Remove((InProgressDownloadEntryWrapper)row);
+                RemoveFromAllList(row);
             }
         }
 
@@ -369,6 +459,7 @@ namespace XDM.Wpf.UI
             foreach (var row in rows)
             {
                 finishedList.Remove((FinishedDownloadEntryWrapper)row);
+                RemoveFromAllList(row);
             }
         }
 
@@ -473,6 +564,162 @@ namespace XDM.Wpf.UI
                 finishedListViewSortAdorner = new SortAdorner(finishedListViewSortCol, newDir);
                 AdornerLayer.GetAdornerLayer(finishedListViewSortCol).Add(finishedListViewSortAdorner);
                 lvFinished.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+            }
+        }
+
+        private void lvAll_Click(object sender, RoutedEventArgs e)
+        {
+            if (e.OriginalSource is GridViewColumnHeader column)
+            {
+                string sortBy = (string)column.Tag;
+                if (string.IsNullOrEmpty(sortBy))
+                {
+                    return;
+                }
+                if (allListViewSortCol != null)
+                {
+                    AdornerLayer.GetAdornerLayer(allListViewSortCol).Remove(allListViewSortAdorner);
+                }
+                lvAll.Items.SortDescriptions.Clear();
+
+                ListSortDirection newDir = ListSortDirection.Ascending;
+                if (allListViewSortCol == column && allListViewSortAdorner?.Direction == newDir)
+                    newDir = ListSortDirection.Descending;
+
+                allListViewSortCol = column;
+                allListViewSortAdorner = new SortAdorner(allListViewSortCol, newDir);
+                AdornerLayer.GetAdornerLayer(allListViewSortCol).Add(allListViewSortAdorner);
+                lvAll.Items.SortDescriptions.Add(new SortDescription(sortBy, newDir));
+            }
+        }
+
+        /// <summary>
+        /// Rebuilds the "All" list after XDM replaces one of the two lists (startup, import),
+        /// keeping the sort order the user picked.
+        /// </summary>
+        private void RebuildAllList()
+        {
+            var sort = lvAll.Items.SortDescriptions.ToList();
+            foreach (var row in allList)
+            {
+                row.Detach();
+            }
+            allList = new ObservableCollection<AllDownloadsRow>(
+                inProgressList.Select(r => new AllDownloadsRow(r))
+                .Concat(finishedList.Select(r => new AllDownloadsRow(r))));
+            lvAll.ItemsSource = allList;
+            lvAll.Items.SortDescriptions.Clear();
+            foreach (var description in sort)
+            {
+                lvAll.Items.SortDescriptions.Add(description);
+            }
+            if (lvCategory.SelectedIndex == AllIndex)
+            {
+                ApplyFilter();
+            }
+        }
+
+        private void RemoveFromAllList(object row)
+        {
+            var allRow = allList.FirstOrDefault(r => ReferenceEquals(r.Source, row));
+            if (allRow != null)
+            {
+                allRow.Detach();
+                allList.Remove(allRow);
+            }
+        }
+
+        private void UpdateStatusBarStats()
+        {
+            if (!IsVisible)
+            {
+                return;
+            }
+
+            var stats = DownloadStats.GetSnapshot();
+            int downloading = 0, waiting = 0, stopped = 0;
+            foreach (var row in inProgressList)
+            {
+                switch (row.Status)
+                {
+                    case DownloadStatus.Downloading: downloading++; break;
+                    case DownloadStatus.Waiting: waiting++; break;
+                    default: stopped++; break;
+                }
+            }
+
+            // Free space needs a disk query and changes slowly: refresh it every 10 seconds.
+            if (statsTicks++ % 10 == 0)
+            {
+                freeSpaceText = GetFreeSpaceText();
+            }
+
+            var parts = new List<string>
+            {
+                "\u2193 " + (stats.TotalSpeed > 0 ? FormattingHelper.FormatSize(stats.TotalSpeed) : "0B") + "/s",
+                string.Format(TextResource.GetText("SB_DOWNLOADING"), downloading)
+            };
+            if (waiting > 0)
+            {
+                parts.Add(string.Format(TextResource.GetText("SB_WAITING"), waiting));
+            }
+            if (stopped > 0)
+            {
+                parts.Add(string.Format(TextResource.GetText("SB_STOPPED"), stopped));
+            }
+            if (stats.Remaining > 0)
+            {
+                parts.Add(string.Format(TextResource.GetText("SB_REMAINING"), FormattingHelper.FormatSize(stats.Remaining),
+                    stats.EtaSeconds >= 0 ? FormattingHelper.ToHMS(stats.EtaSeconds) : "---"));
+            }
+            if (stats.SessionBytes > 0)
+            {
+                parts.Add(string.Format(TextResource.GetText("SB_SESSION"), FormattingHelper.FormatSize(stats.SessionBytes)));
+                parts.Add(string.Format(TextResource.GetText("SB_PEAK"), FormattingHelper.FormatSize(stats.PeakSpeed) + "/s"));
+            }
+            parts.Add(string.Format(TextResource.GetText("SB_FINISHED"), finishedList.Count,
+                FormattingHelper.FormatSize(finishedList.Where(r => r.Size > 0).Sum(r => r.Size))));
+            if (freeSpaceText.Length > 0)
+            {
+                parts.Add(freeSpaceText);
+            }
+
+            TxtStats.Text = string.Join("  \u2022  ", parts);
+            TxtStats.ToolTip = string.Join(Environment.NewLine, parts);
+        }
+
+        private static string GetFreeSpaceText()
+        {
+            try
+            {
+                var root = Path.GetPathRoot(Config.Instance.DefaultDownloadFolder);
+                if (string.IsNullOrEmpty(root))
+                {
+                    return string.Empty;
+                }
+                var drive = new DriveInfo(root);
+                return drive.IsReady
+                    ? string.Format(TextResource.GetText("SB_FREE"), FormattingHelper.FormatSize(drive.AvailableFreeSpace), drive.Name.TrimEnd('\\'))
+                    : string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Could not read free disk space");
+                return string.Empty;
+            }
+        }
+
+        private void menuSkippedDownloads_Click(object sender, RoutedEventArgs e)
+        {
+            var file = LinkDownloads.SkippedListPath;
+            if (!File.Exists(file))
+            {
+                MessageBox.Show(this, TextResource.GetText("MSG_NO_SKIPPED_DOWNLOADS"), "XDM");
+                return;
+            }
+            if (!PlatformHelper.OpenFile(file))
+            {
+                MessageBox.Show(this, TextResource.GetText("ERR_MSG_FILE_NOT_FOUND_MSG"), "XDM");
             }
         }
 
@@ -643,6 +890,7 @@ namespace XDM.Wpf.UI
             }
             lvInProgress.ContextMenuOpening += LvInProgressContextMenu_ContextMenuOpening;
             lvFinished.ContextMenuOpening += LvFinishedContextMenu_ContextMenuOpening;
+            lvAll.ContextMenuOpening += LvAll_ContextMenuOpening;
 
             var newDownloadMenu = (ContextMenu)FindResource("newDownloadContextMenu");
 
@@ -724,6 +972,19 @@ namespace XDM.Wpf.UI
         private void LvInProgressContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             this.InProgressContextMenuOpening?.Invoke(sender, e);
+        }
+
+        private void LvAll_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            // Each row carries the menu of its kind; enable that menu's items for the selection.
+            if ((e.OriginalSource as FrameworkElement)?.DataContext is AllDownloadsRow row && row.IsFinished)
+            {
+                this.FinishedContextMenuOpening?.Invoke(sender, e);
+            }
+            else
+            {
+                this.InProgressContextMenuOpening?.Invoke(sender, e);
+            }
         }
 
         public IPlatformClipboardMonitor GetClipboardMonitor() => this.clipboarMonitor;

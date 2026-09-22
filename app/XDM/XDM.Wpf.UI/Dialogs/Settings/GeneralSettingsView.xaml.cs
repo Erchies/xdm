@@ -40,6 +40,8 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             ChkShowComplete.IsChecked = Config.Instance.ShowDownloadCompleteWindow;
             ChkStartAuto.IsChecked = Config.Instance.StartDownloadAutomatically;
             ChkOverwrite.IsChecked = Config.Instance.FileConflictResolution == FileConflictResolution.Overwrite;
+            ChkQuietLinkDownloads.IsChecked = Config.Instance.QuietLinkDownloads;
+            ChkSkipDuplicates.IsChecked = Config.Instance.SkipDuplicateDownloads;
             ChkDarkTheme.IsChecked = Config.Instance.AllowSystemDarkTheme;
             TxtTempFolder.Text = Config.Instance.TempDir;
             CmbMaxParallalDownloads.SelectedItem = Config.Instance.MaxParallelDownloads;
@@ -61,6 +63,8 @@ namespace XDM.Wpf.UI.Dialogs.Settings
             Config.Instance.StartDownloadAutomatically = ChkStartAuto.IsChecked ?? false;
             Config.Instance.FileConflictResolution =
                 ChkOverwrite.IsChecked.HasValue && ChkOverwrite.IsChecked.Value ? FileConflictResolution.Overwrite : FileConflictResolution.AutoRename;
+            Config.Instance.QuietLinkDownloads = ChkQuietLinkDownloads.IsChecked ?? false;
+            Config.Instance.SkipDuplicateDownloads = ChkSkipDuplicates.IsChecked ?? false;
             Config.Instance.TempDir = TxtTempFolder.Text;
             Config.Instance.MaxParallelDownloads = (int)CmbMaxParallalDownloads.SelectedItem;
 

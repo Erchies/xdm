@@ -331,7 +331,8 @@ namespace XDM.Core.UI
                         view.Authentication,
                         view.Proxy ?? Config.Instance.Proxy,
                         queueId,
-                        false
+                        false,
+                        Config.Instance.QuietLinkDownloads
                     );
             }
         }

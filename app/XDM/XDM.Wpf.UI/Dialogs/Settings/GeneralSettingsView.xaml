@@ -43,8 +43,14 @@
                           VerticalContentAlignment="Center" Margin="10,5" Padding="3" Content="{StaticResource SHOW_DWN_COMPLETE}"/>
                 <CheckBox Name="ChkStartAuto" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
                           Margin="10,5" Padding="3" Content="{StaticResource LBL_START_AUTO}"/>
-                <CheckBox Name="ChkOverwrite" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" VerticalContentAlignment="Center" 
-                          Margin="10,5" Padding="3" Content="{StaticResource LBL_OVERWRITE_EXISTING}"/>
+                <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
+                    <CheckBox Name="ChkOverwrite" VerticalContentAlignment="Center"
+                              Margin="10,5" Padding="3" Content="{StaticResource LBL_OVERWRITE_EXISTING}"/>
+                    <CheckBox Name="ChkQuietLinkDownloads" VerticalContentAlignment="Center"
+                              Margin="10,5" Padding="3" Content="{StaticResource SETTINGS_QUIET_LINKS}"/>
+                    <CheckBox Name="ChkSkipDuplicates" VerticalContentAlignment="Center"
+                              Margin="10,5" Padding="3" Content="{StaticResource SETTINGS_SKIP_DUPLICATES}"/>
+                </StackPanel>
                 <TextBlock Margin="10" Text="{StaticResource MSG_DOUBLE_CLICK_ACTION}" VerticalAlignment="Center" Grid.Row="4"  Grid.ColumnSpan="2" />
                 <StackPanel Margin="10" Grid.Row="4"  Grid.ColumnSpan="2" Grid.Column="2">
                     <ComboBox Grid.Row="8" Name="CmbDblClickAction" HorizontalAlignment="Right"
