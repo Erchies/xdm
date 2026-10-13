@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Duas cartas: a de trás dourada, a da frente com o 7. Tudo dentro da zona segura de 66dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:pivotX="49" android:pivotY="55" android:rotation="-14">
+        <path
+            android:fillColor="#F2BE3A"
+            android:pathData="M38,34h22a4,4 0 0 1 4,4v34a4,4 0 0 1 -4,4h-22a4,4 0 0 1 -4,-4v-34a4,4 0 0 1 4,-4z" />
+    </group>
+    <group android:pivotX="58" android:pivotY="54" android:rotation="8">
+        <path
+            android:fillColor="#0B5F53"
+            android:pathData="M46,33.5h24a4,4 0 0 1 4,4v36a4,4 0 0 1 -4,4h-24a4,4 0 0 1 -4,-4v-36a4,4 0 0 1 4,-4z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M46,32h24a4,4 0 0 1 4,4v36a4,4 0 0 1 -4,4h-24a4,4 0 0 1 -4,-4v-36a4,4 0 0 1 4,-4z" />
+        <path
+            android:fillColor="#D3383E"
+            android:pathData="M49,40h18v6l-9,22h-7.5l9,-21.5h-10.5z" />
+    </group>
+</vector>

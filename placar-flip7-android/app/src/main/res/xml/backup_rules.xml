@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 ou anterior: inclui o localStorage da WebView (a partida) no backup. -->
+<full-backup-content />
