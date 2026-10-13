@@ -1,1 +1,1 @@
-Placar para o jogo de cartas Flip 7: marque as cartas e a soma sai na hora.
+Marque as cartas de cada jogador e o placar do Flip 7 se calcula sozinho.
