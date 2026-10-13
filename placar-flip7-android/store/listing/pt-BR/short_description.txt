@@ -1,0 +1,1 @@
+Marque as cartas de cada jogador e o placar do Flip 7 se calcula sozinho.

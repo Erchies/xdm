@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- isLightTheme decide o prefers-color-scheme da WebView (targetSdk 33+). -->
+    <style name="Theme.PlacarFlip7" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/table_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
