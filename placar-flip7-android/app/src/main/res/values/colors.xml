@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mesma cor de fundo da página (--bg) para não piscar ao abrir. -->
+    <!-- Mesma cor de fundo da página (variável CSS bg) para não piscar ao abrir. -->
     <color name="table_bg">#E3EDE6</color>
     <color name="icon_bg">#0F8474</color>
 </resources>
