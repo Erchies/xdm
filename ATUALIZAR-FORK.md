@@ -1,14 +1,17 @@
 # Como atualizar este fork
 
-Este fork (`Erchies/xdm`) junta três projetos:
+Este fork (`Erchies/xdm`) junta quatro projetos:
 
 | O que | Repositório de base | Onde está aqui |
 |---|---|---|
 | O XDM em si | [subhra74/xdm](https://github.com/subhra74/xdm) | tudo em `app/` |
 | Listagem do GoFile | [ltsdw/gofile-downloader](https://github.com/ltsdw/gofile-downloader), via o projeto local `Documents\gofile-downloader-gui` | `app/XDM/XDM.Core/FileHosts/GofileResolver.cs` |
 | Listagem do Bunkr | [ZeroHackz/BunkrDownloader-Portable](https://github.com/ZeroHackz/BunkrDownloader-Portable), que segue [Lysagxra/BunkrDownloader](https://github.com/Lysagxra/BunkrDownloader) | `app/XDM/XDM.Core/FileHosts/BunkrResolver.cs` e `BunkrHtml.cs` |
+| Listagem do Erome | [M4p4/EromeDownloader](https://github.com/M4p4/EromeDownloader) | `app/XDM/XDM.Core/FileHosts/EromeResolver.cs` |
 
-O XDM se atualiza com `git merge`. GoFile e Bunkr são em Python e foram **reescritos em C#**, então não dá para dar merge neles: você vê o que mudou lá e aplica a mesma mudança no arquivo C# correspondente. As tabelas abaixo dizem onde.
+A leitura de HTML que o Bunkr e o Erome usam fica em `FileHosts/SimpleHtml.cs`.
+
+O XDM **não** se atualiza mais com `git merge` (veja o passo 3). GoFile, Bunkr e Erome são em Python e foram **reescritos em C#**, então não dá para dar merge neles: você vê o que mudou lá e aplica a mesma mudança no arquivo C# correspondente. As tabelas abaixo dizem onde.
 
 Os comandos usam `git`, `gh` (GitHub CLI) e `dotnet` (SDK 8). Rode no **Git Bash**, a partir da pasta do fork.
 
@@ -21,12 +24,13 @@ Versões de cada base usadas como referência. **Atualize esta tabela sempre que
 | Base | Branch | Commit de referência | Data do commit |
 |---|---|---|---|
 | subhra74/xdm | `master` | `1ca5a25aae007826c859c81bea494e7c102e1242` | 2023-06-19 |
-| ZeroHackz/BunkrDownloader-Portable | `release/latest` | `b3ee61135755fd34ffeebd9f95658ec7a648e2d7` | 2026-08-03 |
-| Lysagxra/BunkrDownloader | `main` | `331061addfbc16765dc2e91056364ea6ca65f238` | 2026-08-24 |
-| ltsdw/gofile-downloader | `main` | `640b8a41560808208cfdcf74b135107b8956b625` | 2026-08-14 |
+| ZeroHackz/BunkrDownloader-Portable | `release/latest` | `25e928ad` (não portado: nada novo de descoberta de links) | 2026-10-24 |
+| Lysagxra/BunkrDownloader | `main` | `dddf52d6` | 2026-10-21 |
+| ltsdw/gofile-downloader | `main` | `48349ba` (não portado: só linha de comando e pastas) | 2026-09-30 |
+| M4p4/EromeDownloader | `main` | `a3ee9d3a4cf6415cc967c3690fc0335adf4f3d1b` | 2026-06-01 |
 | gofile-downloader-gui (local) | — | sem git | — |
 
-Referências conferidas em 2026-09-16.
+Referências conferidas em 2026-11-02.
 
 ---
 
@@ -40,9 +44,10 @@ while read repo base branch; do
   gh api "repos/$repo/compare/$base...$branch" --jq '"commits novos: \(.ahead_by)", (.commits[] | "  " + .sha[0:7] + " " + (.commit.message | split("\n")[0])), (.files[] | "  arquivo: " + .filename)'
 done <<'EOF'
 subhra74/xdm 1ca5a25aae007826c859c81bea494e7c102e1242 master
-ZeroHackz/BunkrDownloader-Portable b3ee61135755fd34ffeebd9f95658ec7a648e2d7 release/latest
-Lysagxra/BunkrDownloader 331061addfbc16765dc2e91056364ea6ca65f238 main
-ltsdw/gofile-downloader 640b8a41560808208cfdcf74b135107b8956b625 main
+ZeroHackz/BunkrDownloader-Portable 25e928a release/latest
+Lysagxra/BunkrDownloader dddf52d main
+ltsdw/gofile-downloader 48349ba main
+M4p4/EromeDownloader a3ee9d3a4cf6415cc967c3690fc0335adf4f3d1b main
 EOF
 ```
 
@@ -56,7 +61,21 @@ Troque o repositório, o commit, o branch e o nome do arquivo conforme a base.
 
 ---
 
-## 3. Atualizar o XDM (merge normal)
+## 3. Atualizar o XDM
+
+> **O XDM original deixou de ser este programa.** Em 07/10/2026 o autor reescreveu o
+> projeto em **Kotlin/JVM com interface Swing** (commit `753767a`), e desde então todo o
+> desenvolvimento acontece lá. O código C# em que este fork se baseia não recebe mais
+> correções. Um `git merge upstream/master` **apagaria o aplicativo C# inteiro** e deixaria
+> o fork sem a integração de GoFile, Bunkr e Erome.
+>
+> Enquanto você quiser continuar com a versão C#, **não dê merge do upstream**. Para
+> aproveitar o XDM novo, as listagens precisariam ser reescritas em Kotlin — é um projeto à
+> parte, não uma atualização.
+>
+> O restante desta seção só vale se um dia você decidir voltar a acompanhar o upstream.
+
+### Merge (só se o upstream voltar a ser C#)
 
 O remoto `upstream` aponta para `subhra74/xdm` e `origin` para o seu fork. Se um clone novo não tiver o `upstream`:
 
@@ -80,12 +99,12 @@ Os arquivos novos (`FileHosts/`, `FileHostDownloadUIController.cs`, `IFileHostDo
 
 | Arquivo | O que a integração acrescentou |
 |---|---|
-| `app/XDM/XDM.Core/Config.cs` | propriedades `FileHostCreateSubfolders`, `GofileAccountToken`, `GofileWebsiteTokenSalt`, `BunkrIncludeFilter`, `BunkrIgnoreFilter`, `BunkrCleanName`, `QuietLinkDownloads`, `SkipDuplicateDownloads` |
+| `app/XDM/XDM.Core/Config.cs` | propriedades `FileHostCreateSubfolders`, `GofileAccountToken`, `GofileWebsiteTokenSalt`, `FileHostIncludeFilter`, `FileHostIgnoreFilter`, `BunkrCleanName`, `QuietLinkDownloads`, `SkipDuplicateDownloads` |
 | `app/XDM/XDM.Core/IO/ConfigIO.cs` | leitura e gravação dessas propriedades (os dois lados precisam continuar batendo) |
 | `app/XDM/XDM.Core/ApplicationCore.cs` | `using XDM.Core.FileHosts`; em `DownloadFinished`, `FileHostFileDates.Apply` (data de envio do Bunkr) e `LinkDownloads.UnmarkQuiet`; em `GetStateFiles`, os arquivos `<id>.filedate` e `<id>.quiet`; parâmetro `quiet` de `StartDownload` (fila, `ResumeDownload`, `RestartDownload`); `DownloadStats.Update`/`Remove` nos eventos de progresso, fim, falha e cancelamento; checagem de duplicado em `AddDownload` |
 | `app/XDM/XDM.Core/IApplicationCore.cs` | parâmetro opcional `quiet` em `StartDownload` |
 | `app/XDM/XDM.Core/IPlatformUIService.cs` | método `ShowFileHostDownloadWindow` |
-| `app/XDM/XDM.Core/UI/NewDownloadDialogUIController.cs` | desvio de links GoFile/Bunkr para a janela nova; checagem de duplicado e `quiet` em `OnDownloadClicked` |
+| `app/XDM/XDM.Core/UI/NewDownloadDialogUIController.cs` | desvio de links GoFile/Bunkr/Erome para a janela nova; checagem de duplicado e `quiet` em `OnDownloadClicked` |
 | `app/XDM/XDM.Core/UI/DownloadSelectionUIController.cs` e `VideoDownloaderUIController.cs` | checagem de duplicado (só na lista) e `quiet` em `StartDownload` |
 | `app/XDM/XDM.Core/XDM.Core.projitems` | lista dos arquivos novos |
 | `app/XDM/XDM.Wpf.UI/MainWindow/MainWindow.xaml` e `.xaml.cs` | item de menu `menuFileHostDownload` (índice 3 do menu Novo); aba "Todos" (`lvAll`, índice 0 da lista de categorias, o que desloca Em andamento para 1 e Concluídos para 2); colunas de velocidade e tempo restante; `TxtStats` no rodapé; item `menuSkippedDownloads` |
@@ -163,6 +182,7 @@ A base portada hoje é o **Lysagxra**, que está à frente do ZeroHackz: Referer
 | `src/config.py` → `URL_TYPE_MAPPING` (`a`, `f`, `i`, `v`) | `BunkrResolver.AlbumTypes` / `FileTypes` |
 | `src/config.py` → `JS_VARS_REGEX`, `MEDIA_SLUG_REGEX` | `BunkrHtml.JsVarsRegex`, `BunkrHtml.MediaSlugRegex` |
 | `src/crawlers/api_utils.py` → `extract_page_vars`, `extract_file_id` | `BunkrHtml.GetPageVariables`, `BunkrHtml.GetFileId` |
+| `src/crawlers/api_utils.py` → `unescape_js_path` | `BunkrHtml.UnescapeJsPath` |
 | `src/crawlers/api_utils.py` → `get_download_response` | `BunkrResolver.GetUnsignedUrl` |
 | `src/crawlers/api_utils.py` → `get_api_response` (assinatura do link) | `BunkrResolver.GetDownloadLink` |
 | `src/crawlers/crawler_utils.py` → `extract_item_pages` (classes do `<a>`) | `BunkrHtml.ItemLinkClasses`, `GetItemPages` |
@@ -178,9 +198,42 @@ A base portada hoje é o **Lysagxra**, que está à frente do ZeroHackz: Referer
 | `src/url_utils.py` → `src/misc/url_utils.py` → `check_url_type` / `resolve_url_type` | `BunkrResolver.GetUrlType`, `HostRegex` |
 | `src/bunkr_utils.py` → `src/misc/bunkr_utils.py` → classes da página de status | `BunkrHtml.StatusRowClasses`, `GetServerStatus` |
 | `src/general_utils.py` → `src/misc/general_utils.py` → `fetch_page` (troca de domínio no 403) | `BunkrResolver.FetchPage` |
-| `src/file_utils.py` → `src/misc/file_utils.py` → `matches_ignore_list` / `matches_include_list` | `BunkrResolver.IsFilteredOut` |
+| `src/file_utils.py` → `src/misc/file_utils.py` → `matches_ignore_list` / `matches_include_list` | `FileHostOptions.ShouldSkip` (vale para Bunkr e Erome) |
+
+A varredura de HTML em si (achar tags, ler atributos, pegar o texto) está em `SimpleHtml.cs`, compartilhada com o Erome; no `BunkrHtml.cs` ficam só os seletores do Bunkr.
 
 Os testes em `app/XDM/XDM.FileHosts.Tests/BunkrResolverTests.cs` usam HTML de exemplo com as classes atuais. Quando mudar uma classe em `BunkrHtml.cs`, mude também no HTML de exemplo do teste.
+
+---
+
+## 6. Portar uma mudança do Erome
+
+O [M4p4/EromeDownloader](https://github.com/M4p4/EromeDownloader) é um script só, o
+`dump.py`. Só a parte que **descobre os links** foi portada (`_collect_album_data`); o
+download, as conexões simultâneas e as tentativas são do XDM.
+
+O site é simples e muda pouco, mas tudo depende de três coisas na página do álbum: a meta
+tag `og:title`, as tags `<source src>` e as `<div class="img" data-src>`.
+
+### Onde cada coisa está
+
+| No Python (`dump.py`) | No C# (`EromeResolver.cs`) |
+|---|---|
+| `HOST` (`www.erome.com`) | `HostName`, `HostRegex` |
+| `USER_AGENT` | `UserAgent` |
+| url de álbum (`/a/<id>`) | `AlbumPathRegex`, `TryParseAlbum` |
+| `_collect_album_data` → `og:title` | `GetAlbumTitle` |
+| `_collect_album_data` → `soup.find_all("source")` | `GetMediaUrls` (tags `source`) |
+| `_collect_album_data` → `div.img[data-src]` | `GetMediaUrls` (`ImageClasses`) |
+| `_collect_album_data` → `list({*videos, *images})` | `GetMediaUrls` (sem repetidos, mas na ordem da página) |
+| `_clean_album_title` | `FileHostNames.Sanitize` |
+| `headers={"Referer": album, ...}` no download | `Headers["Referer"]` de cada `ResolvedFile` |
+| `--skip-videos` / `--skip-images` | filtros de nome em Opções (`FileHostOptions.ShouldSkip`) |
+
+O `Referer` é o detalhe que mais importa: o CDN do Erome recusa o arquivo sem ele.
+
+Os testes ficam em `app/XDM/XDM.FileHosts.Tests/EromeResolverTests.cs`, com uma página de
+exemplo no mesmo formato da que o projeto usa nos testes dele.
 
 ---
 
@@ -198,28 +251,46 @@ Os testes em `app/XDM/XDM.FileHosts.Tests/BunkrResolverTests.cs` usam HTML de ex
 | Bunkr: nomes estranhos ou só o código do CDN | classes do `<h1>` mudaram | `BunkrHtml.ItemNameClasses` |
 | Bunkr: "Não foi possível carregar ... (HTTP 403)" | domínio alternativo mudou | `FallbackDomain` |
 | Bunkr: a data de modificação dos arquivos é a hora do download | a classe `theDate` ou o formato da data mudou | `BunkrHtml.GetItemDates`, `DateFormats` |
+| Bunkr: nome de arquivo com \u00e9 no lugar do acento, e download 404 | o site escapou o caminho e a decodificação falhou | `BunkrHtml.UnescapeJsPath` |
+| Erome: "Nenhum arquivo encontrado em ..." | as tags `<source>` ou a classe `img` mudaram | `EromeResolver.GetMediaUrls`, `ImageClasses` |
+| Erome: lista, mas o download falha com 403 no XDM | o CDN passou a exigir outro `Referer` ou um cookie | `EromeResolver.Resolve` (`pageUrl`) |
+| Erome: a pasta sai com o código do álbum em vez do nome | a meta `og:title` mudou | `EromeResolver.GetAlbumTitle` |
+| Erome: nenhuma resposta do site | pode ser bloqueio do provedor: teste `curl -I https://www.erome.com/` | nada a mexer no código |
 
 ---
 
 ## Pendências conhecidas
 
-Conferido em 2026-09-16:
+Conferido em 2026-11-02:
 
-Nenhuma base tinha commits novos. Tudo do Lysagxra `331061a` que afeta a descoberta de links foi portado:
-
-- **Referer do Bunkr:** `https://dl.bunkrr.cr/` (commit [`f6aad02`](https://github.com/Lysagxra/BunkrDownloader/commit/f6aad02b5397eae8197c0ecd6ef97df9fa405a63)).
-- **Regra do nome:** o nome do CDN só é usado se for igual ao título ou começar com `título-` / `título_`. Antes bastava conter o título.
-- **Nome limpo:** caixa em Opções, desligada por padrão. Nomes repetidos no álbum ganham `(1)`, `(2)`...
-- **Data de envio:** vira a data de modificação do arquivo quando o XDM termina o download. Vale também para downloads na fila ou retomados depois de fechar o XDM.
+- **subhra74/xdm:** 135 commits novos, mas o projeto virou outro programa (Kotlin/JVM, veja
+  o passo 3). Nada a portar; nada a mesclar.
+- **Lysagxra/BunkrDownloader:** portado o [`dddf52d`](https://github.com/Lysagxra/BunkrDownloader/commit/dddf52d),
+  que desfaz os escapes `\uXXXX` do caminho do CDN. O [`7035a46`](https://github.com/Lysagxra/BunkrDownloader/commit/7035a46)
+  (servidor marcado como offline sem motivo) não precisa de nada aqui: este port nunca
+  marca servidor como offline, só avisa a partir da página de status, e página de status
+  fora do ar já não gera aviso. O resto (`#98` juntar as partes num temporário, `#102` e o
+  refactor de dataclasses) é do lado do download, que é do XDM.
+- **ZeroHackz/BunkrDownloader-Portable:** 42 commits, todos de descoberta de links já
+  vindos do Lysagxra, ou coisas da interface Python (suporte a Linux, lembrar configurações).
+- **ltsdw/gofile-downloader:** o [`48349ba`](https://github.com/ltsdw/gofile-downloader/commit/48349ba)
+  mexe em linha de comando e em criação de pastas. A extração do id continua igual, e a
+  daqui (`ParseContentId`) já aceita mais formatos.
+- **M4p4/EromeDownloader:** sem commits novos.
 
 Limites conhecidos:
 
-1. A data da **página do item** (`get_item_date`) não foi confirmada numa página real nem pelo próprio Lysagxra. Em álbuns vale a data da listagem (`theDate`), que é confiável; links de arquivo único podem ficar sem data.
-2. **GoFile:** nada pendente. O salt e a fórmula do ltsdw são os mesmos do código daqui.
+1. A data da **página do item** do Bunkr (`get_item_date`) não foi confirmada numa página
+   real nem pelo próprio Lysagxra. Em álbuns vale a data da listagem (`theDate`), que é
+   confiável; links de arquivo único podem ficar sem data.
+2. **Erome:** o site não respondeu a partir desta rede quando o suporte foi escrito (o
+   `curl` nem completa a conexão, enquanto outros sites respondem). A listagem foi testada
+   só contra páginas de exemplo, nunca contra um álbum de verdade.
+3. **GoFile:** nada pendente. O salt e a fórmula do ltsdw são os mesmos do código daqui.
 
 ---
 
-## 6. Depois de qualquer atualização
+## 7. Depois de qualquer atualização
 
 1. Rode os testes:
    ```bash
@@ -234,9 +305,10 @@ Limites conhecidos:
    dotnet build app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj
    ```
 4. Abra `app/XDM/XDM.Wpf.UI/bin/Release/net4.7.2/xdm-app.exe` e teste um link real de cada site.
+   Feche o XDM antes de compilar, senão o `.exe` fica travado e o build falha.
 5. Atualize a tabela do passo 1 com os commits novos. Este comando mostra o commit atual de cada base:
    ```bash
-   for r in subhra74/xdm:master ZeroHackz/BunkrDownloader-Portable:release/latest Lysagxra/BunkrDownloader:main ltsdw/gofile-downloader:main; do
+   for r in subhra74/xdm:master ZeroHackz/BunkrDownloader-Portable:release/latest Lysagxra/BunkrDownloader:main ltsdw/gofile-downloader:main M4p4/EromeDownloader:main; do
      gh api "repos/${r%%:*}/commits/${r#*:}" --jq "\"${r%%:*}  \" + .sha + \"  \" + .commit.committer.date[0:10]"
    done
    ```
@@ -244,6 +316,6 @@ Limites conhecidos:
 6. Faça o commit e envie para o seu fork:
    ```bash
    git add -A
-   git commit -m "Sincroniza com as bases (XDM/GoFile/Bunkr)"
+   git commit -m "Sincroniza com as bases (GoFile/Bunkr/Erome)"
    git push origin master
    ```
