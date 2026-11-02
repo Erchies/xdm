@@ -158,9 +158,9 @@ namespace XDM.Core
         /// </summary>
         public string GofileWebsiteTokenSalt { get; set; }
 
-        public string BunkrIncludeFilter { get; set; }
+        public string FileHostIncludeFilter { get; set; }
 
-        public string BunkrIgnoreFilter { get; set; }
+        public string FileHostIgnoreFilter { get; set; }
 
         public bool BunkrCleanName { get; set; }
 

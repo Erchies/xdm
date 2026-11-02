@@ -7,7 +7,8 @@ namespace XDM.Core.FileHosts
     {
         public static bool IsSupported(string? url)
         {
-            return !string.IsNullOrEmpty(url) && (GofileResolver.IsGofileLink(url!) || BunkrResolver.IsBunkrLink(url!));
+            return !string.IsNullOrEmpty(url)
+                && (GofileResolver.IsGofileLink(url!) || BunkrResolver.IsBunkrLink(url!) || EromeResolver.IsEromeLink(url!));
         }
 
         /// <summary>
@@ -19,7 +20,8 @@ namespace XDM.Core.FileHosts
             return new List<IFileHostResolver>
             {
                 new GofileResolver(http, options),
-                new BunkrResolver(http, options)
+                new BunkrResolver(http, options),
+                new EromeResolver(http, options)
             };
         }
 

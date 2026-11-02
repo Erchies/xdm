@@ -65,11 +65,11 @@
                     <TextBlock Grid.Row="1" Text="{StaticResource FH_GF_SALT}" VerticalAlignment="Center" Margin="0,0,10,8"/>
                     <TextBox Name="TxtGofileSalt" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8" Padding="3"
                              Background="{StaticResource TextBackcolor}"/>
-                    <TextBlock Grid.Row="2" Text="{StaticResource FH_BK_INCLUDE}" VerticalAlignment="Center" Margin="0,0,10,8"/>
-                    <TextBox Name="TxtBunkrInclude" Grid.Row="2" Grid.Column="1" Margin="0,0,0,8" Padding="3"
+                    <TextBlock Grid.Row="2" Text="{StaticResource FH_INCLUDE}" VerticalAlignment="Center" Margin="0,0,10,8"/>
+                    <TextBox Name="TxtInclude" Grid.Row="2" Grid.Column="1" Margin="0,0,0,8" Padding="3"
                              Background="{StaticResource TextBackcolor}"/>
-                    <TextBlock Grid.Row="3" Text="{StaticResource FH_BK_IGNORE}" VerticalAlignment="Center" Margin="0,0,10,8"/>
-                    <TextBox Name="TxtBunkrIgnore" Grid.Row="3" Grid.Column="1" Margin="0,0,0,8" Padding="3"
+                    <TextBlock Grid.Row="3" Text="{StaticResource FH_IGNORE}" VerticalAlignment="Center" Margin="0,0,10,8"/>
+                    <TextBox Name="TxtIgnore" Grid.Row="3" Grid.Column="1" Margin="0,0,0,8" Padding="3"
                              Background="{StaticResource TextBackcolor}"/>
                     <CheckBox Name="ChkBunkrCleanName" Grid.Row="4" Grid.Column="1" Content="{StaticResource FH_BK_CLEAN_NAME}"
                               Margin="0,0,0,8"/>

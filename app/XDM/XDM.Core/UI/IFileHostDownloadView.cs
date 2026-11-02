@@ -21,9 +21,9 @@ namespace XDM.Core.UI
 
         string GofileWebsiteTokenSalt { get; set; }
 
-        string BunkrIncludeFilter { get; set; }
+        string IncludeFilter { get; set; }
 
-        string BunkrIgnoreFilter { get; set; }
+        string IgnoreFilter { get; set; }
 
         bool BunkrCleanName { get; set; }
 

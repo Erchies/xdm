@@ -87,10 +87,10 @@ namespace XDM.Core.FileHosts
                 }
             }
 
-            context.Info(string.Format(TextResource.GetText("FH_BK_ALBUM"), albumName, itemPages.Count));
+            context.Info(string.Format(TextResource.GetText("FH_ALBUM"), albumName, itemPages.Count));
             if (itemPages.Count == 0)
             {
-                throw new FileHostException(string.Format(TextResource.GetText("FH_BK_NO_ITEMS"), sourceUrl));
+                throw new FileHostException(string.Format(TextResource.GetText("FH_ALBUM_EMPTY"), sourceUrl));
             }
 
             var folder = options.CreateSubfolders ? FileHostNames.Sanitize(albumName, FileHostNames.Sanitize(albumId, "bunkr")) : string.Empty;
@@ -172,9 +172,9 @@ namespace XDM.Core.FileHosts
                 : FormatItemFileName(pageName, urlName);
             name = FileHostNames.Sanitize(name, FileHostNames.Sanitize(urlName, "bunkr-file"));
 
-            if (IsFilteredOut(name))
+            if (options.ShouldSkip(name))
             {
-                context.Info(string.Format(TextResource.GetText("FH_BK_FILTERED"), name));
+                context.Info(string.Format(TextResource.GetText("FH_FILTERED"), name));
                 return null;
             }
 
@@ -307,7 +307,7 @@ namespace XDM.Core.FileHosts
                 }
                 if (!response.IsSuccess)
                 {
-                    throw new FileHostException(string.Format(TextResource.GetText("FH_BK_PAGE_FAILED"), current, response.StatusCode));
+                    throw new FileHostException(string.Format(TextResource.GetText("FH_PAGE_FAILED"), current, response.StatusCode));
                 }
                 return new Page(response.ResponseUri?.AbsoluteUri ?? current, response.Body);
             }
@@ -347,16 +347,6 @@ namespace XDM.Core.FileHosts
                 }
                 return serverStatus;
             }
-        }
-
-        private bool IsFilteredOut(string name)
-        {
-            if (options.BunkrIgnore.Any(word => word.Length > 0 && name.Contains(word)))
-            {
-                return true;
-            }
-            var include = options.BunkrInclude.Where(word => word.Length > 0).ToList();
-            return include.Count > 0 && !include.Any(word => name.Contains(word));
         }
 
         /// <summary>

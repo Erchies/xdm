@@ -32,8 +32,8 @@ namespace XDM.Core.UI
             view.GofileAccountToken = Config.Instance.GofileAccountToken ?? string.Empty;
             view.GofileWebsiteTokenSalt = string.IsNullOrEmpty(Config.Instance.GofileWebsiteTokenSalt)
                 ? GofileResolver.DefaultWebsiteTokenSalt : Config.Instance.GofileWebsiteTokenSalt;
-            view.BunkrIncludeFilter = Config.Instance.BunkrIncludeFilter ?? string.Empty;
-            view.BunkrIgnoreFilter = Config.Instance.BunkrIgnoreFilter ?? string.Empty;
+            view.IncludeFilter = Config.Instance.FileHostIncludeFilter ?? string.Empty;
+            view.IgnoreFilter = Config.Instance.FileHostIgnoreFilter ?? string.Empty;
             view.BunkrCleanName = Config.Instance.BunkrCleanName;
 
             view.LinksText = string.IsNullOrEmpty(links) ? GetSupportedLinksFromClipboard() : links!;
@@ -306,8 +306,8 @@ namespace XDM.Core.UI
             Config.Instance.GofileAccountToken = view.GofileAccountToken.Trim();
             var salt = view.GofileWebsiteTokenSalt.Trim();
             Config.Instance.GofileWebsiteTokenSalt = salt == GofileResolver.DefaultWebsiteTokenSalt ? string.Empty : salt;
-            Config.Instance.BunkrIncludeFilter = view.BunkrIncludeFilter.Trim();
-            Config.Instance.BunkrIgnoreFilter = view.BunkrIgnoreFilter.Trim();
+            Config.Instance.FileHostIncludeFilter = view.IncludeFilter.Trim();
+            Config.Instance.FileHostIgnoreFilter = view.IgnoreFilter.Trim();
             Config.Instance.BunkrCleanName = view.BunkrCleanName;
             Config.SaveConfig();
         }
@@ -318,8 +318,8 @@ namespace XDM.Core.UI
             {
                 GofileAccountToken = Config.Instance.GofileAccountToken ?? string.Empty,
                 GofileWebsiteTokenSalt = Config.Instance.GofileWebsiteTokenSalt ?? string.Empty,
-                BunkrInclude = FileHostResolvers.ParseFilter(Config.Instance.BunkrIncludeFilter),
-                BunkrIgnore = FileHostResolvers.ParseFilter(Config.Instance.BunkrIgnoreFilter),
+                Include = FileHostResolvers.ParseFilter(Config.Instance.FileHostIncludeFilter),
+                Ignore = FileHostResolvers.ParseFilter(Config.Instance.FileHostIgnoreFilter),
                 BunkrCleanName = Config.Instance.BunkrCleanName,
                 CreateSubfolders = Config.Instance.FileHostCreateSubfolders,
                 Retries = Math.Max(1, Math.Min(Config.Instance.MaxRetry, 5))

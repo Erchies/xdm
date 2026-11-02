@@ -270,8 +270,8 @@ namespace XDM.FileHosts.Tests
                 .On("GET", "https://bunkr.si/f/2", 200, Item("sample.mp4", "https://s.cdn.test/sample-2.mp4"))
                 .On("GET", "https://bunkr.si/f/3", 200, Item("photo.jpg", "https://s.cdn.test/photo-3.jpg"));
             var options = Options();
-            options.BunkrInclude = new[] { "mp4" };
-            options.BunkrIgnore = new[] { "sample" };
+            options.Include = new[] { "mp4" };
+            options.Ignore = new[] { "sample" };
 
             var files = new BunkrResolver(http, options).Resolve(new FileHostLink("https://bunkr.si/a/F", null), new FileHostContext());
 

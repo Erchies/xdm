@@ -44,9 +44,9 @@ namespace XDM.Wpf.UI.Dialogs.FileHostDownload
 
         public string GofileWebsiteTokenSalt { get => TxtGofileSalt.Text; set => TxtGofileSalt.Text = value; }
 
-        public string BunkrIncludeFilter { get => TxtBunkrInclude.Text; set => TxtBunkrInclude.Text = value; }
+        public string IncludeFilter { get => TxtInclude.Text; set => TxtInclude.Text = value; }
 
-        public string BunkrIgnoreFilter { get => TxtBunkrIgnore.Text; set => TxtBunkrIgnore.Text = value; }
+        public string IgnoreFilter { get => TxtIgnore.Text; set => TxtIgnore.Text = value; }
 
         public bool BunkrCleanName { get => ChkBunkrCleanName.IsChecked ?? false; set => ChkBunkrCleanName.IsChecked = value; }
 

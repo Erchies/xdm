@@ -182,6 +182,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)FileHosts\FileHostResolvers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileHosts\FileHostWebClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileHosts\GofileResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileHosts\EromeResolver.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileHosts\SimpleHtml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IButton.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IDownloadSelectionView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\IFinishedDownloadRow.cs" />

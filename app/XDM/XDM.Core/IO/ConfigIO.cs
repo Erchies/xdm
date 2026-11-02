@@ -202,11 +202,14 @@ namespace XDM.Core.IO
                     case "GofileWebsiteTokenSalt":
                         instance.GofileWebsiteTokenSalt = r.ReadString();
                         break;
+                    // The "Bunkr" names are what builds before the Erome support wrote.
                     case "BunkrIncludeFilter":
-                        instance.BunkrIncludeFilter = r.ReadString();
+                    case "FileHostIncludeFilter":
+                        instance.FileHostIncludeFilter = r.ReadString();
                         break;
                     case "BunkrIgnoreFilter":
-                        instance.BunkrIgnoreFilter = r.ReadString();
+                    case "FileHostIgnoreFilter":
+                        instance.FileHostIgnoreFilter = r.ReadString();
                         break;
                     case "BunkrCleanName":
                         instance.BunkrCleanName = r.ReadBoolean();
@@ -417,9 +420,9 @@ namespace XDM.Core.IO
             count++;
             WriteString(w, instance.GofileWebsiteTokenSalt, "GofileWebsiteTokenSalt");
             count++;
-            WriteString(w, instance.BunkrIncludeFilter, "BunkrIncludeFilter");
+            WriteString(w, instance.FileHostIncludeFilter, "FileHostIncludeFilter");
             count++;
-            WriteString(w, instance.BunkrIgnoreFilter, "BunkrIgnoreFilter");
+            WriteString(w, instance.FileHostIgnoreFilter, "FileHostIgnoreFilter");
             count++;
             WriteBoolean(w, instance.BunkrCleanName, "BunkrCleanName");
             count++;

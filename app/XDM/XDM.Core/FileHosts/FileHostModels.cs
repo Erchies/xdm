@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 
 namespace XDM.Core.FileHosts
@@ -69,14 +70,29 @@ namespace XDM.Core.FileHosts
         public string GofileUserAgent { get; set; } = string.Empty;
 
         /// <summary>
-        /// Bunkr: when not empty, only names containing at least one of these words are kept.
+        /// When not empty, only names containing at least one of these words are kept.
         /// </summary>
-        public IList<string> BunkrInclude { get; set; } = new List<string>();
+        public IList<string> Include { get; set; } = new List<string>();
 
         /// <summary>
-        /// Bunkr: names containing any of these words are skipped.
+        /// Names containing any of these words are skipped.
         /// </summary>
-        public IList<string> BunkrIgnore { get; set; } = new List<string>();
+        public IList<string> Ignore { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Applies the name filters above. GoFile is left out: its links name whole folders,
+        /// and the file list in the dialog already allows picking what to download.
+        /// </summary>
+        public bool ShouldSkip(string name)
+        {
+            if (Ignore.Any(word => word.Length > 0 && name.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                return true;
+            }
+            var include = Include.Where(word => word.Length > 0).ToList();
+            return include.Count > 0
+                && !include.Any(word => name.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
 
         /// <summary>
         /// Bunkr: name files after the page title only, without the CDN code ("--clean-name").
