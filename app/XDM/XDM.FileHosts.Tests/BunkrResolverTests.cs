@@ -101,6 +101,25 @@ namespace XDM.FileHosts.Tests
             Assert.AreEqual("Non-operational", status["Kebab"]);
         }
 
+        // Escapes javascript applies to a path, as of Lysagxra/BunkrDownloader dddf52d.
+        [TestCase(@"https:\/\/cdn.test\/a.mp4", "https://cdn.test/a.mp4")]
+        [TestCase(@"\/storage\/Caf\u00e9 \u2013 2024\/v.mp4", "/storage/Café – 2024/v.mp4")]
+        [TestCase(@"C:\\dir\\x", @"C:\dir\x")]
+        [TestCase("nothing to undo", "nothing to undo")]
+        [TestCase(@"\u00zz not an escape", @"\u00zz not an escape")]
+        public void UndoesJavascriptPathEscapes(string value, string expected)
+        {
+            Assert.AreEqual(expected, BunkrHtml.UnescapeJsPath(value));
+        }
+
+        [Test]
+        public void PageVariablesDecodeUnicodeEscapes()
+        {
+            var html = "<script>var jsCDN = \"https:\\/\\/c.bunkr.test\\/Caf\\u00e9.mp4\";</script>";
+
+            Assert.AreEqual("https://c.bunkr.test/Café.mp4", BunkrHtml.GetPageVariables(html)["jsCDN"]);
+        }
+
         [TestCase("video.mp4", "video.mp4", "video.mp4")]
         [TestCase("video.mp4", "video-AbCd1234.mp4", "video-AbCd1234.mp4")]
         [TestCase("video.mp4", "video_AbCd1234.mp4", "video_AbCd1234.mp4")]

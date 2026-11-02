@@ -18,6 +18,7 @@ namespace XDM.Core.FileHosts
         private static readonly Regex ScriptRegex = new(@"<script\b[^>]*>(.*?)</script\s*>", RegexOptions.Singleline | RegexOptions.IgnoreCase);
         private static readonly Regex JsVarsRegex = new(@"var\s+(\w+)\s*=\s*("".*?""|'.*?'|[^;]+);", RegexOptions.Singleline);
         private static readonly Regex MediaSlugRegex = new(@"const\s+slug\s*=\s*""([a-zA-Z0-9_-]+)""");
+        private static readonly Regex UnicodeEscapeRegex = new(@"\\u([0-9a-fA-F]{4})");
         private static readonly Regex NumberRegex = new(@"\d+");
         private static readonly Regex RelativeDateRegex = new(@"\bago\b|\byesterday\b|\btoday\b", RegexOptions.IgnoreCase);
         private static readonly HashSet<string> VoidElements = new(StringComparer.OrdinalIgnoreCase)
@@ -203,12 +204,22 @@ namespace XDM.Core.FileHosts
                 }
                 foreach (Match variable in JsVarsRegex.Matches(body))
                 {
-                    var value = variable.Groups[2].Value.Replace(@"\/", "/").Replace(@"\\", @"\").Trim().Trim('"', '\'');
-                    variables[variable.Groups[1].Value] = value;
+                    variables[variable.Groups[1].Value] = UnescapeJsPath(variable.Groups[2].Value).Trim().Trim('"', '\'');
                 }
                 break;
             }
             return variables;
+        }
+
+        /// <summary>
+        /// Undoes the escaping javascript applies to a path. Bunkr started emitting \uXXXX for
+        /// non-ASCII characters, which used to reach the CDN literally and give a 404.
+        /// </summary>
+        public static string UnescapeJsPath(string value)
+        {
+            value = UnicodeEscapeRegex.Replace(value,
+                m => ((char)int.Parse(m.Groups[1].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture)).ToString());
+            return value.Replace(@"\/", "/").Replace(@"\\", @"\");
         }
 
         public static string? GetFileId(string html)
